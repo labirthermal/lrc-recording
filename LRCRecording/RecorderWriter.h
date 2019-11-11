@@ -10,7 +10,7 @@ using namespace std;
 /// <summary>
 /// Writes temperature data to a file.
 /// </summary>
-class RecorderWriter abstract
+class RecorderWriter
 {
 public:
 	/// <summary>
@@ -22,7 +22,7 @@ protected:
 	/// <summary>
 	/// The maximal allowed file size.
 	/// </summary>
-	const long MaxFileSize = 1024 * 1024 * 1024;	// 1 GB
+	const long MaxFileSize =  1024 * 1024 * 1024;	// 1 GB
 
 	/// <summary>
 	/// Indicates whether to split large files.
@@ -182,17 +182,17 @@ protected:
 	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
 	/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
-	virtual void WriteFrame(float* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) abstract;
+	virtual void WriteFrame(float* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
 
 	/// <summary>
 	/// Size of file header in bytes.
 	/// </summary>
-	virtual long GetFileHeaderSize() abstract;
+	virtual long GetFileHeaderSize() = 0;
 
 	/// <summary>
 	/// Size of frame in bytes.
 	/// </summary>
-	virtual long GetFrameSize() abstract;
+	virtual long GetFrameSize() = 0;
 
 #pragma endregion
 
@@ -286,7 +286,7 @@ protected:
 	/// </summary>
 	/// <param name="fileName">The file name.</param>
 	/// <returns>Returns true if the file exists, false otherwise.</returns>
-	bool RecorderWriter::FileExists(string fileName);
+	bool FileExists(string fileName);
 
 	/// <summary>
 	/// Ensures the existence of directory tree for the given file name.
@@ -338,7 +338,7 @@ private:
 	/// <param name="dataHeight">Data height.</param>
 	/// <param name="rect">Rect where data will be written.</param>
 	/// <returns>True if rect fit into frame and data is at least as large as rect. False otherwise.</returns>
-	bool RecorderWriter::CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect);
+	bool CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect);
 
 
 #pragma region Auxiliary writing methods
@@ -383,6 +383,7 @@ protected:
 	/// <param name="data">The data to write.</param>
 	/// <param name="count">The number of elements to write.</param>
 	void WriteRawDataBE(uint16_t* data, int count);
+
 
 #pragma endregion
 

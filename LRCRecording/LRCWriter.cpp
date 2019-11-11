@@ -13,20 +13,20 @@ LRCWriter::LRCWriter(StreamInfo* streams, int streamCount, IExternalDevice** ext
 {
 	// check counts
 	if (streamCount == 0)
-		throw "At least one stream must be given.";
+		throw std::runtime_error("At least one stream must be given.");
 	if (streamCount > UINT8_MAX)
-		throw "Maximum of 255 streams are supported.";
+		throw std::runtime_error("Maximum of 255 streams are supported.");
 	if (externalDevices && extDevCount > UINT8_MAX)
-		throw "Maximum of 256 external devices are supported.";
+		throw std::runtime_error("Maximum of 256 external devices are supported.");
 
 	// copy streams
 	this->streams = new StreamInfo[streamCount];
-	memcpy_s(this->streams, streamCount * sizeof(StreamInfo), streams, streamCount * sizeof(StreamInfo));
+	memcpy(this->streams, streams, streamCount * sizeof(StreamInfo));
 	this->streamCount = streamCount;
 
 	// copy external devices
 	this->externalDevices = new IExternalDevice*[extDevCount];
-	memcpy_s(this->externalDevices, sizeof(this->externalDevices), externalDevices, extDevCount * sizeof(IExternalDevice*));
+	memcpy(this->externalDevices, externalDevices, extDevCount * sizeof(IExternalDevice*));
 	this->extDevCount = extDevCount;
 
 //	DynamicHeaderInfo = new SortedDictionary<FileHeaderInfo, object>();
@@ -53,7 +53,7 @@ LRCWriter::~LRCWriter()
 /// </summary>
 void LRCWriter::OpenFileWithSuffix(string fileName)
 {
-	__super::OpenFileWithSuffix(fileName);
+	RecorderWriter::OpenFileWithSuffix(fileName);
 
 	WriteFileHeader();
 

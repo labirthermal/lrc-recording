@@ -53,7 +53,7 @@ void RecorderWriter::RecordSingleFrame(float* data, int width, int height, strin
 void RecorderWriter::StartRecordingManually(string fileName, int width, int height)
 {
 	if (fileOut.is_open())
-		throw "Recording already running.";
+		throw std::runtime_error("Recording already running.");
 
 	// reset recording files
 	frameCount = 0;
@@ -92,7 +92,7 @@ void RecorderWriter::RecordFrame(float* data, char streamId, Int32Rect dataRect,
 	//	throw "Data rectangle doesn't fit into frame size or data is smaller than data rectangle.";
 
 	if (!fileOut.is_open())
-		throw "Recording file is not open.";
+		throw std::runtime_error("Recording file is not opened.");
 
 	// store the starting time
 	if (recordingStartTime == 0)
@@ -250,7 +250,7 @@ string RecorderWriter::SuffixFileName(string fileName)
 		return AppendTimestampToFileName(fileName);
 
 	default:
-		throw "Recording suffix style is not implemented.";
+		throw std::runtime_error("Recording suffix style is not implemented.");
 	}
 }
 
@@ -388,7 +388,7 @@ void RecorderWriter::EnsureDirectory(string fileName)
 #endif
 			// check errors
 			if (mdret && errno != EEXIST)
-				throw "Cannot create directory tree.";
+				throw std::runtime_error("Cannot create directory tree.");
 		}
 	}
 }
@@ -418,7 +418,7 @@ void RecorderWriter::OpenFileWithSuffix(string fileName)
 
 	// double check the file does not exist
 	if (FileExists(fileName))
-		throw "The file \"" + fileName + "\" already exists.";
+		throw std::runtime_error("The file \"" + fileName + "\" already exists.");
 	
 	// open the file
 	OpenFile(fileName);
@@ -532,7 +532,7 @@ void RecorderWriter::WriteString(string str, int totalLength)
 	
 	// check string length
 	if (totalLength > 0 && byteCount > totalLength)
-		throw "The string is too long. It does not fit the desired length.";
+		throw std::runtime_error("The string is too long. It does not fit the desired length.");
 
 	// write the string
 	fileOut << str;
