@@ -8,7 +8,8 @@
 /// <summary>
 /// Class for creating LabIR specific sequence files.
 /// </summary>
-class LRCWriter : public RecorderWriter
+/// <typeparam name="T">The temperature data type.</typeparam>
+template <typename T> class LRCWriter : public RecorderWriter<T>
 {
 private:
 	/// <summary>
@@ -166,7 +167,7 @@ protected:
 	/// <param name="rect">Rectangle where parameter data should be writen.</param>
 	/// <param name="dataRange">Range of data.</param>
 	/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
-	void WriteFrame(float* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
+	void WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
 
 #pragma region Write methods
 
@@ -193,7 +194,7 @@ private:
 	/// </summary>
 	/// <param name="data">The temperature data (in degrees Celsius) to write.</param>
 	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
-	void WriteTemperatureData(float* data, Int32Rect dataRect, Range dataRange);
+	void WriteTemperatureData(T* data, Int32Rect dataRect, Range dataRange);
 
 #pragma endregion
 	

@@ -9,10 +9,13 @@ const int Width = 160;
 const int Height = 120;
 const string FileName = "recording.lrc";
 
+// the data type to test
+//typedef float TData;
+typedef uint16_t TData;
 
 
 /// <summary>
-/// Generates random data.
+/// Generates random data of type float.
 /// </summary>
 /// <param name="buff">The preallocated destination buffer.</param>
 /// <param name="count">The number of elements in the buffer.</param>
@@ -32,6 +35,26 @@ void GenerateData(float* buff, int count)
 }
 
 /// <summary>
+/// Generates random data of type uint16.
+/// </summary>
+/// <param name="buff">The preallocated destination buffer.</param>
+/// <param name="count">The number of elements in the buffer.</param>
+void GenerateData(uint16_t* buff, int count)
+{
+	const uint16_t Min = 20000;
+	const uint16_t Max = 30000;
+	const uint16_t Range = Max - Min;
+
+	for (int i = 0; i < count; i++)
+	{
+		// generate a random number from 0 to 1
+		float f = (float)rand() / (float)RAND_MAX;
+		// convert to the desired interval
+		buff[i] = (uint16_t)(Min + f * Range);
+	}
+}
+
+/// <summary>
 /// Records one image.
 /// </summary>
 void RecordImage()
@@ -43,14 +66,14 @@ void RecordImage()
 	stream.objectParams = ObjectParameters();
 
 	// generate some data
-	float data[Width * Height];
+	TData data[Width * Height];
 	GenerateData(data, Width * Height);
 
 	// create the writer
-	LRCWriter writer(&stream, 1, NULL, 0);
-	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::None);
-	writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Number);
-	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
+	LRCWriter<TData> writer(&stream, 1, NULL, 0);
+	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::None);
+	writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Number);
+	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
 
 	// record one image
 	writer.RecordSingleFrame(data, Width, Height, FileName);
@@ -68,13 +91,13 @@ void RecordSequence()
 	stream.objectParams = ObjectParameters();
 
 	// create buffer for data
-	float data[Width * Height];
+	TData data[Width * Height];
 
 	// create the writer
-	LRCWriter writer(&stream, 1, NULL, 0);
-	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::None);
-	writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Number);
-	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
+	LRCWriter<TData> writer(&stream, 1, NULL, 0);
+	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::None);
+	writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Number);
+	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
 
 	// start recording
 	writer.StartRecordingManually(FileName, Width, Height);

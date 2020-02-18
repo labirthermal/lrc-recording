@@ -10,7 +10,8 @@ using namespace std;
 /// <summary>
 /// Writes temperature data to a file.
 /// </summary>
-class RecorderWriter
+/// <typeparam name="T">The temperature data type.</typeparam>
+template <typename T> class RecorderWriter
 {
 public:
 	/// <summary>
@@ -133,7 +134,7 @@ public:
 	/// <param name="width">The frame width.</param>
 	/// <param name="height">The frame height.</param>
 	/// <param name="fileName">The recording file name.</param>
-	void RecordSingleFrame(float* data, int width, int height, string fileName);
+	void RecordSingleFrame(T* data, int width, int height, string fileName);
 
 	/// <summary>
 	/// Opens a file for manual recording.
@@ -156,7 +157,7 @@ public:
 	/// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 	/// <param name="range">Range of data values. If null, the range will be calculated.</param>
 	/// <param name="frameTimestamp">Frame timestamp in milliseconds since 1.1.1970.</param>
-	void RecordFrame(float* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
+	void RecordFrame(T* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
 
 	/// <summary>
 	/// Closes the file being recorded.
@@ -182,7 +183,7 @@ protected:
 	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
 	/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
-	virtual void WriteFrame(float* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
+	virtual void WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
 
 	/// <summary>
 	/// Size of file header in bytes.
@@ -239,6 +240,8 @@ public:
 
 #pragma endregion
 
+#pragma region Suffixing file names
+
 private:
 	/// <summary>
 	/// Escapes special characters in a text for a regular expression.
@@ -273,6 +276,8 @@ private:
 	/// <param name="fileName">The base file name.</param>
 	/// <returns>Returns the file name with the timestamp.</returns>
 	string AppendTimestampToFileName(string fileName);
+
+#pragma endregion
 
 protected:
 	/// <summary>
@@ -320,7 +325,7 @@ protected:
 	/// <param name="data">The data.</param>
 	/// <param name="length">The length of data.</param>
 	/// <param name="range">The range to store the result.</param>
-	static void FindDataRange(const float* data, int length, Range* range);
+	static void FindDataRange(const T* data, int length, Range* range);
 
 	/// <summary>
 	/// Updates the range of the data.
@@ -328,7 +333,7 @@ protected:
 	/// <param name="data">The data.</param>
 	/// <param name="length">The length of data.</param>
 	/// <param name="range">The range to update.</param>
-	static void UpdateDataRange(const float* data, int length, Range* range);
+	static void UpdateDataRange(const T* data, int length, Range* range);
 
 private:
 	/// <summary>
