@@ -86,6 +86,11 @@ public:
 
 private:
 	/// <summary>
+	/// The original file name without suffix.
+	/// </summary>
+	string baseFileName = "";
+
+	/// <summary>
 	/// The base file name (without a number appended) for which the file numbering is established.
 	/// </summary>
 	string fileNumberingName = "";

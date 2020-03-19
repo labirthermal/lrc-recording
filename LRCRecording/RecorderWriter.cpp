@@ -246,6 +246,9 @@ void RecorderWriter<T>::FindNextRecordingNumber(string fileName)
 template <typename T>
 string RecorderWriter<T>::SuffixFileName(string fileName)
 {
+	// store the base file name
+	baseFileName = fileName;
+
 	switch (GetRecordingSuffix())
 	{
 	case RecordingSuffix::None:
@@ -449,28 +452,14 @@ void RecorderWriter<T>::CheckFileSize()
 	// would writing another frame exceed the allowed file size?
 	if ((long)fileOut.tellp() + GetFrameSize() > MaxFileSize)
 	{
-		// store output file name before closing it
-		string fileName = GetActualFileName();
-
 		// close the current file
 		Close();
-
-		// get unnumbered file name
-		if (!GetRewriteFiles())
-		{
-			// find the number delimiters
-			int underscore = fileName.find_last_of('_');
-			int dot = fileName.find_last_of('.');
-			// strip the number from the file name
-			if (underscore > 0 && dot > underscore)
-				fileName = fileName.erase(underscore, dot - underscore);
-		}
 
 		// suspend overwriting files
 		bool wasRewrite = GetRewriteFiles();
 		SetRewriteFiles(false);
 		// open the new file
-		OpenFileWithSuffix(fileName);
+		OpenFileWithSuffix(baseFileName);
 		// restore overwriting setting
 		SetRewriteFiles(wasRewrite);
 	}
