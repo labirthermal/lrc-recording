@@ -471,8 +471,6 @@ void RecorderWriter<T>::CheckFileSize()
 		SetRewriteFiles(false);
 		// open the new file
 		OpenFileWithSuffix(fileName);
-		// initialise recording to the new file
-		InitialiseRecording();
 		// restore overwriting setting
 		SetRewriteFiles(wasRewrite);
 	}
