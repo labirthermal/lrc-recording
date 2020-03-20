@@ -5,6 +5,8 @@
 
 #include "stdafx.h"
 
+using namespace std;
+
 /// <summary>
 /// Rectangle with integer coordinates.
 /// </summary>
@@ -282,7 +284,32 @@ struct StreamInfo
 class IExternalDevice
 {
 public:
-	virtual std::string GetName() = 0;
+	/// <summary>
+	/// Gets the device name.
+	/// </summary>
+	virtual string GetName() = 0;
 
-	virtual uint16_t GetCurrentValue() = 0;
+	/// <summary>
+	/// Gets the size of the device data. Must be fixed.
+	/// </summary>
+	virtual uint16_t GetDataSize() = 0;
+
+	/// <summary>
+	/// Gets the device binary data. The array length is <see cref="DataSize"/>.
+	/// </summary>
+	/// <remarks>Getter is used when writing to a file.</remarks>
+	virtual const char* GetBinaryData() = 0;
+
+	/// <summary>
+	/// Sets the device binary data. The array length is <see cref="DataSize"/>.
+	/// </summary>
+	/// <param name="data">The binary data array.</param>
+	/// <remarks>Setter is used when reading from a file.</remarks>
+	virtual void SetBinaryData(const char* data) = 0;
+
+	/// <summary>
+	/// Gets the device formatted data.
+	/// </summary>
+	/// <returns>Returns the device formatted data.</returns>
+	virtual string GetFormattedData() = 0;
 };

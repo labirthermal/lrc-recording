@@ -18,8 +18,19 @@ private:
 	/// </summary>
 	const string FileTypeHeader = "LRC";
 
+	/// <summary>
+	/// The LRC file version.
+	/// </summary>
+	const uint8_t LRCVersion = 2;
+
+	/// <summary>
+	/// The size of the file header.
+	/// </summary>
 	long fileHeaderSize;
 
+	/// <summary>
+	/// The size of one frame.
+	/// </summary>
 	long frameSize;
 
 	/// <summary>
@@ -182,6 +193,13 @@ private:
 	/// </summary>
 	/// <param name="note">Note for this frame.</param>
 	void WriteFrameHeader(uint64_t dateTime, string note);
+
+	/// <summary>
+	/// Writes an external device into currently open file.
+	/// </summary>
+	/// <param name="devID">The device ID.</param>
+	/// <param name="dev">The external device.</param>
+	void WriteExternalDevice(uint8_t devID, IExternalDevice* dev);
 
 	/// <summary>
 	/// Writes stream header into currently open file.

@@ -14,11 +14,11 @@ LRCWriter<T>::LRCWriter(StreamInfo* streams, int streamCount, IExternalDevice** 
 {
 	// check counts
 	if (streamCount == 0)
-		throw std::runtime_error("At least one stream must be given.");
+		throw runtime_error("At least one stream must be given.");
 	if (streamCount > UINT8_MAX)
-		throw std::runtime_error("Maximum of 255 streams are supported.");
+		throw runtime_error("Maximum of 255 streams are supported.");
 	if (externalDevices && extDevCount > UINT8_MAX)
-		throw std::runtime_error("Maximum of 256 external devices are supported.");
+		throw runtime_error("Maximum of 256 external devices are supported.");
 
 	// copy streams
 	this->streams = new StreamInfo[streamCount];
@@ -76,7 +76,12 @@ void LRCWriter<T>::CalculateSizes()
 	frameHeaderSize = sizeof(uint64_t);	// frame datetime
 //	if (DynamicHeaderInfo.ContainsKey(FileHeaderInfo.FrameNoteLength))
 //		frameHeaderSize += Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]);	// frame note
-	frameHeaderSize += sizeof(uint16_t) * extDevCount;	// external device data
+
+	// calculate the size of external device IDs and data
+	int sumDataSize = 0;
+	for (int i = 0; i < extDevCount; i++)
+		sumDataSize += externalDevices[i]->GetDataSize();
+	frameHeaderSize += sumDataSize + sizeof(uint8_t) * extDevCount;	// data of external devices
 
 	streamHeaderSizes = new long[streamCount];
 	streamSizes = new long[streamCount];
@@ -197,11 +202,32 @@ void LRCWriter<T>::WriteFileHeader()
 {
 	// static part of file header
 	WriteString(FileTypeHeader, 4);
+
+	// LRC version
+	fileOut.write((char*)&LRCVersion, sizeof(uint8_t));
+
 	// recording start datetime
 	uint64_t nowBin = TimeToBinary(GetTimeMs());
 	fileOut.write((char*)&nowBin, sizeof(uint64_t));
-	fileOut.write((char*)&extDevCount, sizeof(uint8_t));	// external devices count
-	fileOut.write((char*)&streamCount, sizeof(uint8_t));	// number of streams in this file
+
+	// external devices
+	fileOut.write((char*)&extDevCount, sizeof(uint8_t));
+	for (uint8_t i = 0; i < extDevCount; i++)
+	{
+		// device ID
+		fileOut.write((char*)&i, sizeof(uint8_t));
+		// device name
+		string name = externalDevices[i]->GetName();
+		char length = name.length();
+		fileOut.write(&length, sizeof(char));
+		fileOut.write(name.c_str(), length);	// should be UTF-8
+		// device data size
+		uint16_t dataSize = externalDevices[i]->GetDataSize();
+		fileOut.write((char*)&dataSize, sizeof(uint16_t));
+	}
+
+	// number of streams in this file
+	fileOut.write((char*)&streamCount, sizeof(uint8_t));
 	for (int i = 0; i < streamCount; i++)
 	{
 		// write stream data type
@@ -211,6 +237,7 @@ void LRCWriter<T>::WriteFileHeader()
 		uint8_t units = streams[i].units;
 		fileOut.write((char*)&units, sizeof(uint8_t));
 	}
+
 	// write resolution
 	fileOut.write((char*)&width, sizeof(uint16_t));
 	fileOut.write((char*)&height, sizeof(uint16_t));
@@ -250,10 +277,22 @@ void LRCWriter<T>::WriteFrameHeader(uint64_t dateTime, string note)
 
 	// write external device values
 	for (int i = 0; i < extDevCount; i++)
-	{
-		uint16_t extDevValue = externalDevices[i]->GetCurrentValue();
-		fileOut.write((char*)&extDevValue, sizeof(uint16_t));
-	}
+		WriteExternalDevice(i, externalDevices[i]);
+}
+
+/// <summary>
+/// Writes an external device into currently open file.
+/// </summary>
+/// <param name="devID">The device ID.</param>
+/// <param name="dev">The external device.</param>
+template <typename T>
+void LRCWriter<T>::WriteExternalDevice(uint8_t devID, IExternalDevice* dev)
+{
+	// write the device ID
+	fileOut.write((char*)&devID, sizeof(uint8_t));
+
+	// write the device data
+	fileOut.write(dev->GetBinaryData(), dev->GetDataSize());
 }
 
 /// <summary>
