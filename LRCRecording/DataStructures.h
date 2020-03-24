@@ -243,6 +243,27 @@ struct ObjectParameters
 
 
 /// <summary>
+/// Camera parameters.
+/// </summary>
+struct CameraParameters
+{
+	/// <summary>
+	/// The camera resolution.
+	/// </summary>
+	uint16_t width, height;
+
+	/// <summary>
+	/// Initialises the camera parameters.
+	/// </summary>
+	CameraParameters()
+	{
+		width = height = 0;
+	}
+};
+
+
+
+/// <summary>
 /// Struct that holds info about LRC stream.
 /// Contains TemperatureSource it's data type and units.
 /// </summary>
