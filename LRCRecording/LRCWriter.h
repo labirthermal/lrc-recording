@@ -181,7 +181,7 @@ private:
 	/// Writes frame header into currently open file.
 	/// </summary>
 	/// <param name="note">Note for this frame.</param>
-	void WriteFrameHeader(time_t dateTime, string note);
+	void WriteFrameHeader(uint64_t dateTime, string note);
 
 	/// <summary>
 	/// Writes stream header into currently open file.

@@ -240,10 +240,10 @@ void LRCWriter<T>::WriteFileHeader()
 /// </summary>
 /// <param name="note">Note for this frame.</param>
 template <typename T>
-void LRCWriter<T>::WriteFrameHeader(time_t dateTime, string note)
+void LRCWriter<T>::WriteFrameHeader(uint64_t dateTime, string note)
 {
 	// frame datetime
-	uint64_t nowBin = TimeToBinary(GetTimeMs());
+	uint64_t nowBin = TimeToBinary(dateTime);
 	fileOut.write((char*)&nowBin, sizeof(uint64_t));
 	//if (DynamicHeaderInfo.ContainsKey(FileHeaderInfo.FrameNoteLength) && Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]) > 0)
 	//	WriteString(note ? ? string.Empty, Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]));// write frame note if present
