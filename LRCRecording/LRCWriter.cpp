@@ -303,8 +303,8 @@ template <typename T>
 void LRCWriter<T>::WriteStreamHeader(uint8_t streamId, Range dataRange)
 {
 	// write data temp range
-	float dataRangeMin = dataRange.min;
-	float dataRangeMax = dataRange.max;
+	float dataRangeMin = (float)dataRange.min;
+	float dataRangeMax = (float)dataRange.max;
 	fileOut.write((char*)&dataRangeMin, sizeof(float));
 	fileOut.write((char*)&dataRangeMax, sizeof(float));
 
@@ -342,7 +342,7 @@ void LRCWriter<float>::WriteTemperatureData(float* data, Int32Rect dataRect, Ran
 	// write rows before rect
 	WriteZeros(valueSize * width * dataRect.y);
 
-	float dataRangeLength = dataRange.GetLength();
+	double dataRangeLength = dataRange.GetLength();
 	for (int i = 0; i < dataRect.height; i++)
 	{
 		// write columns before rect

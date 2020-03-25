@@ -58,7 +58,7 @@ struct Range
 	/// <summary>
 	/// The range bounds.
 	/// </summary>
-	float min, max;
+	double min, max;
 
 	/// <summary>
 	/// Initialises an empty range.
@@ -73,8 +73,8 @@ struct Range
 	/// </summary>
 	void ResetActualRange()
 	{
-		min = FLT_MAX;
-		max = -FLT_MAX;
+		min = DBL_MAX;
+		max = -DBL_MAX;
 	}
 
 	/// <summary>
@@ -90,7 +90,7 @@ struct Range
 	/// Extends the range to include the given value.
 	/// </summary>
 	/// <param name="value">The value to include in the range.</param>
-	void IncludeValue(float value)
+	void IncludeValue(double value)
 	{
 		if (value < min)
 			min = value;
@@ -102,7 +102,7 @@ struct Range
 	/// Gets the range length, i.e., max - min;
 	/// </summary>
 	/// <returns>Returns the range length.</returns>
-	float GetLength()
+	double GetLength()
 	{
 		return max - min;
 	}
