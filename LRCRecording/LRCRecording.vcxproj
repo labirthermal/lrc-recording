@@ -155,6 +155,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DateTime.h" />
     <ClInclude Include="include\dirent.h" />
     <ClInclude Include="LRCWriter.h" />
     <ClInclude Include="OfflineSource.h" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataStructures.h" />
+    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="LRCWriter.cpp" />
     <ClCompile Include="PlayableSource.cpp" />
     <ClCompile Include="RecorderWriter.cpp" />

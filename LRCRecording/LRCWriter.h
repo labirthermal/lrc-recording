@@ -162,13 +162,6 @@ private:
 	/// </summary>
 	void CalculateSizes();
 
-	/// <summary>
-	/// Converts time to binary UInt64 representation compatible with C#.
-	/// </summary>
-	/// <param name="time">Time in milliseconds since 1.1.1970.</param>
-	/// <returns>Returns the time as binary UInt64.</returns>
-	uint64_t TimeToBinary(uint64_t time);
-
 protected:
 	/// <summary>
 	/// Writes data to first stream of next frame.
@@ -177,7 +170,7 @@ protected:
 	/// <param name="streamId">Id of stream that will be writen.</param>
 	/// <param name="rect">Rectangle where parameter data should be writen.</param>
 	/// <param name="dataRange">Range of data.</param>
-	/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
+	/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 	void WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
 
 #pragma region Write methods
@@ -191,6 +184,7 @@ private:
 	/// <summary>
 	/// Writes frame header into currently open file.
 	/// </summary>
+	/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 	/// <param name="note">Note for this frame.</param>
 	void WriteFrameHeader(uint64_t dateTime, string note);
 

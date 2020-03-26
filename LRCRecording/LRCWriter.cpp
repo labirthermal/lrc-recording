@@ -110,36 +110,13 @@ void LRCWriter<T>::CalculateSizes()
 }
 
 /// <summary>
-/// Converts time to binary UInt64 representation compatible with C#.
-/// </summary>
-/// <param name="time">Time in milliseconds since 1.1.1970.</param>
-/// <returns>Returns the time as binary UInt64.</returns>
-template <typename T>
-uint64_t LRCWriter<T>::TimeToBinary(uint64_t timeMs)
-{
-	const uint64_t TicksPerMillisecond = 10000;
-	const uint64_t UnixEpoch = 621355968000000000;
-	const int64_t TicksCeiling = 0x4000000000000000;
-	const uint64_t LocalMask = 0x8000000000000000;
-
-	// convert time to ticks, offset to UNIX base time
-	uint64_t ticks = timeMs * TicksPerMillisecond + UnixEpoch;
-
-	if (ticks < 0)
-		ticks += TicksCeiling;
-
-	// set time kind as local
-	return ticks | (int64_t)LocalMask;
-}
-
-/// <summary>
 /// Writes data to first stream of next frame.
 /// </summary>
 /// <param name="data">Data array of frame.</param>
 /// <param name="streamId">Id of stream that will be written.</param>
 /// <param name="rect">Rectangle where parameter data should be written.</param>
 /// <param name="dataRange">Range of data.</param>
-/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
+/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 template <typename T>
 void LRCWriter<T>::WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime)
 {
@@ -206,9 +183,9 @@ void LRCWriter<T>::WriteFileHeader()
 	// LRC version
 	fileOut.write((char*)&LRCVersion, sizeof(uint8_t));
 
-	// recording start datetime
-	uint64_t nowBin = TimeToBinary(GetTimeMs());
-	fileOut.write((char*)&nowBin, sizeof(uint64_t));
+	// recording start time stamp
+	int64_t nowBin = DateTime::TimeToBinary(DateTime::Now());
+	fileOut.write((char*)&nowBin, sizeof(int64_t));
 
 	// external devices
 	fileOut.write((char*)&extDevCount, sizeof(uint8_t));
@@ -265,13 +242,14 @@ void LRCWriter<T>::WriteFileHeader()
 /// <summary>
 /// Writes frame header into currently open file.
 /// </summary>
+/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 /// <param name="note">Note for this frame.</param>
 template <typename T>
 void LRCWriter<T>::WriteFrameHeader(uint64_t dateTime, string note)
 {
-	// frame datetime
-	uint64_t nowBin = TimeToBinary(dateTime);
-	fileOut.write((char*)&nowBin, sizeof(uint64_t));
+	// frame timestamp
+	int64_t nowBin = DateTime::TimeToBinary(dateTime);
+	fileOut.write((char*)&nowBin, sizeof(int64_t));
 	//if (DynamicHeaderInfo.ContainsKey(FileHeaderInfo.FrameNoteLength) && Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]) > 0)
 	//	WriteString(note ? ? string.Empty, Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]));// write frame note if present
 

@@ -80,7 +80,7 @@ void RecorderWriter<T>::StartRecordingManually(string fileName, int width, int h
 /// <param name="streamId">Stream ID.</param>
 /// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 /// <param name="range">Range of data values. If null, the range will be calculated.</param>
-/// <param name="frameTimestamp">Frame timestamp in milliseconds since 1.1.1970.</param>
+/// <param name="frameTimestamp">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 template <typename T>
 void RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
 {
@@ -89,7 +89,7 @@ void RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, 
 		dataRect = Int32Rect(0, 0, width, height);
 	// if no timestamp is specified, record the current time
 	if (!frameTimestamp)
-		frameTimestamp = GetTimeMs();
+		frameTimestamp = DateTime::Now();
 
 	//if (!CheckRectSize(data, dataRect))
 	//	throw "Data rectangle doesn't fit into frame size or data is smaller than data rectangle.";
@@ -323,7 +323,7 @@ string RecorderWriter<T>::AppendTimestampToFileName(string fileName)
 		lastDot = fileName.length();
 
 	// construct the timestamp
-	time_t timeSec = GetTimeMs() / 1000;
+	time_t timeSec = DateTime::Now() / 1000;
 	tm* timeLoc = localtime(&timeSec);
 	char timestamp[32];
 	strftime(timestamp, sizeof(timestamp), TimestampFormat.c_str(), timeLoc);
@@ -344,28 +344,6 @@ string RecorderWriter<T>::AppendTimestampToFileName(string fileName)
 	}
 
 	return result;
-}
-
-/// <summary>
-/// Gets the current local time in milliseconds since 1.1.1970.
-/// </summary>
-/// <returns>Returns the current local time in milliseconds.</returns>
-template <typename T>
-uint64_t RecorderWriter<T>::GetTimeMs()
-{
-	long long milliseconds;
-
-#ifdef WIN32
-	timeb t;
-	ftime(&t);
-	milliseconds = (long long)t.time * 1000L + t.millitm;
-#else
-	timeval t;
-	gettimeofday(&t, NULL);
-	milliseconds = (long long)t.tv_sec * 1000L + t.tv_usec / 1000;
-#endif
-
-	return milliseconds;
 }
 
 /// <summary>

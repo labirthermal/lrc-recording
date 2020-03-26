@@ -4,6 +4,7 @@
 #pragma once
 
 #include "DataStructures.h"
+#include "DateTime.h"
 
 using namespace std;
 
@@ -62,7 +63,7 @@ protected:
 
 private:
 	/// <summary>
-	/// The time when the recording started. Measured in milliseconds since 1.1.1970.
+	/// The time when the recording started. Measured as UTC in milliseconds since 1.1.1970.
 	/// </summary>
 	uint64_t recordingStartTime = 0;
 
@@ -161,7 +162,7 @@ public:
 	/// <param name="streamId">Stream ID.</param>
 	/// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 	/// <param name="range">Range of data values. If null, the range will be calculated.</param>
-	/// <param name="frameTimestamp">Frame timestamp in milliseconds since 1.1.1970.</param>
+	/// <param name="frameTimestamp">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 	void RecordFrame(T* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
 
 	/// <summary>
@@ -187,7 +188,7 @@ protected:
 	/// <param name="streamId">Id of stream that will be written.</param>
 	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
-	/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
+	/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
 	virtual void WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
 
 	/// <summary>
@@ -285,12 +286,6 @@ private:
 #pragma endregion
 
 protected:
-	/// <summary>
-	/// Gets the current local time in milliseconds since 1.1.1970.
-	/// </summary>
-	/// <returns>Returns the current local time in milliseconds.</returns>
-	uint64_t GetTimeMs();
-
 	/// <summary>
 	/// Determines whether a file exists.
 	/// </summary>
