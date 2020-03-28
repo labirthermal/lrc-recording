@@ -8,6 +8,13 @@
 using namespace std;
 
 /// <summary>
+/// Types of units for writing temperatures to file.
+/// </summary>
+enum TemperatureSourceUnits { None, Intensity, Celsius, Kelvin, Time, Radians };
+
+
+
+/// <summary>
 /// Rectangle with integer coordinates.
 /// </summary>
 struct Int32Rect
@@ -259,42 +266,6 @@ struct CameraParameters
 	{
 		width = height = 0;
 	}
-};
-
-
-
-/// <summary>
-/// Struct that holds info about LRC stream.
-/// Contains TemperatureSource it's data type and units.
-/// </summary>
-struct StreamInfo
-{
-	/// <summary>
-	/// Data type for writing temperatures to file.
-	/// </summary>
-	enum FileDataType { UInt16, Float };
-
-	/// <summary>
-	/// Types of units for writing temperatures to file.
-	/// </summary>
-	enum TemperatureSourceUnits { None, Intensity, Celsius, Kelvin, Time, Radians };
-
-
-
-	/// <summary>
-	/// Units of temperature.
-	/// </summary>
-	TemperatureSourceUnits units;
-
-	/// <summary>
-	/// Object parameters of this stream.
-	/// </summary>
-	ObjectParameters objectParams;
-
-	/// <summary>
-	/// File data type of this stream.
-	/// </summary>
-	FileDataType dataType;
 };
 
 

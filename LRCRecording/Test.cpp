@@ -112,9 +112,9 @@ void GenerateData(uint16_t* buff, int count)
 void RecordImage()
 {
 	// create the stream info
-	StreamInfo stream;
-	stream.dataType = StreamInfo::FileDataType::UInt16;	// output type
-	stream.units = StreamInfo::TemperatureSourceUnits::Celsius;
+	LRCCommon::StreamInfo stream;
+	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
+	stream.units = TemperatureSourceUnits::Celsius;
 	stream.objectParams = ObjectParameters();
 
 	// generate some data
@@ -137,9 +137,9 @@ void RecordImage()
 void RecordSequence()
 {
 	// create the stream info
-	StreamInfo stream;
-	stream.dataType = StreamInfo::FileDataType::UInt16;	// output type
-	stream.units = StreamInfo::TemperatureSourceUnits::Celsius;
+	LRCCommon::StreamInfo stream;
+	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
+	stream.units = TemperatureSourceUnits::Celsius;
 	stream.objectParams = ObjectParameters();
 
 	// create buffer for data

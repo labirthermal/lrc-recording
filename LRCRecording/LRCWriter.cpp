@@ -10,7 +10,7 @@
 /// <param name="externalDevices">List of external devices.</param>
 /// <param name="extDevCount">Number of external devices.</param>
 template <typename T>
-LRCWriter<T>::LRCWriter(StreamInfo* streams, int streamCount, IExternalDevice** externalDevices, int extDevCount)
+LRCWriter<T>::LRCWriter(LRCCommon::StreamInfo* streams, int streamCount, IExternalDevice** externalDevices, int extDevCount)
 {
 	// check counts
 	if (streamCount == 0)
@@ -21,8 +21,8 @@ LRCWriter<T>::LRCWriter(StreamInfo* streams, int streamCount, IExternalDevice** 
 		throw runtime_error("Maximum of 256 external devices are supported.");
 
 	// copy streams
-	this->streams = new StreamInfo[streamCount];
-	memcpy(this->streams, streams, streamCount * sizeof(StreamInfo));
+	this->streams = new LRCCommon::StreamInfo[streamCount];
+	memcpy(this->streams, streams, streamCount * sizeof(LRCCommon::StreamInfo));
 	this->streamCount = streamCount;
 
 	// copy external devices
@@ -88,7 +88,7 @@ void LRCWriter<T>::CalculateSizes()
 	long streamSizesSum = 0;
 	for (int i = 0; i < streamCount; i++)
 	{
-		int dataTypeSize = streams[i].dataType == StreamInfo::FileDataType::UInt16 ? sizeof(uint16_t) : sizeof(float);
+		int dataTypeSize = streams[i].dataType == LRCCommon::FileDataType::UInt16 ? sizeof(uint16_t) : sizeof(float);
 
 		// calculate stream header size
 		streamHeaderSizes[i] =
@@ -178,7 +178,7 @@ template <typename T>
 void LRCWriter<T>::WriteFileHeader()
 {
 	// static part of file header
-	WriteString(FileTypeHeader, 4);
+	fileOut.write(LRCCommon::FileTypeHeader, 4 * sizeof(char));
 
 	// LRC version
 	fileOut.write((char*)&LRCVersion, sizeof(uint8_t));
@@ -315,7 +315,7 @@ void LRCWriter<T>::WriteStreamHeader(uint8_t streamId, Range dataRange)
 template <>
 void LRCWriter<float>::WriteTemperatureData(float* data, Int32Rect dataRect, Range dataRange)
 {
-	int valueSize = streams[0].dataType == StreamInfo::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
+	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
 
 	// write rows before rect
 	WriteZeros(valueSize * width * dataRect.y);
@@ -331,7 +331,7 @@ void LRCWriter<float>::WriteTemperatureData(float* data, Int32Rect dataRect, Ran
 		{
 			switch (streams[0].dataType)
 			{
-			case StreamInfo::FileDataType::UInt16:
+			case LRCCommon::FileDataType::UInt16:
 			{
 				// float saved as uint16, the current data range is stretched over uint16 range
 				uint16_t u = 0;
@@ -342,7 +342,7 @@ void LRCWriter<float>::WriteTemperatureData(float* data, Int32Rect dataRect, Ran
 			}
 			break;
 
-			case StreamInfo::FileDataType::Float:
+			case LRCCommon::FileDataType::Float:
 			{
 				// float saved as float
 				float f = *data;
@@ -369,7 +369,7 @@ void LRCWriter<float>::WriteTemperatureData(float* data, Int32Rect dataRect, Ran
 template <>
 void LRCWriter<uint16_t>::WriteTemperatureData(uint16_t* data, Int32Rect dataRect, Range dataRange)
 {
-	int valueSize = streams[0].dataType == StreamInfo::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
+	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
 
 	// write rows before rect
 	WriteZeros(valueSize * width * dataRect.y);
@@ -384,7 +384,7 @@ void LRCWriter<uint16_t>::WriteTemperatureData(uint16_t* data, Int32Rect dataRec
 		{
 			switch (streams[0].dataType)
 			{
-			case StreamInfo::FileDataType::UInt16:
+			case LRCCommon::FileDataType::UInt16:
 			{
 				// uint16 saved as uint16 (without any range stretching)
 				uint16_t u = *data;
@@ -393,7 +393,7 @@ void LRCWriter<uint16_t>::WriteTemperatureData(uint16_t* data, Int32Rect dataRec
 			}
 			break;
 
-			case StreamInfo::FileDataType::Float:
+			case LRCCommon::FileDataType::Float:
 			{
 				// uint16 saved as float
 				float f = *data;

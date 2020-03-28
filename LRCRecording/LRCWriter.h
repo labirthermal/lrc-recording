@@ -4,6 +4,7 @@
 #pragma once
 
 #include "RecorderWriter.h"
+#include "LRCCommon.h"
 
 /// <summary>
 /// Class for creating LabIR specific sequence files.
@@ -12,12 +13,6 @@
 template <typename T> class LRCWriter : public RecorderWriter<T>
 {
 private:
-	/// <summary>
-	/// LRCReader file signature.
-	/// Remember to write it including the terminating null.
-	/// </summary>
-	const string FileTypeHeader = "LRC";
-
 	/// <summary>
 	/// The LRC file version.
 	/// </summary>
@@ -36,7 +31,7 @@ private:
 	/// <summary>
 	/// List of streams in this file with their temperature sources and unit types.
 	/// </summary>
-	StreamInfo* streams = NULL;
+	LRCCommon::StreamInfo* streams = NULL;
 	uint8_t streamCount;
 
 	/// <summary>
@@ -143,7 +138,7 @@ public:
 	/// <param name="streamCount">Number of streams.</param>
 	/// <param name="externalDevices">List of pointers to external devices.</param>
 	/// <param name="extDevCount">Number of external devices.</param>
-	LRCWriter(StreamInfo* streams, int streamCount, IExternalDevice** externalDevices = NULL, int extDevCount = 0);
+	LRCWriter(LRCCommon::StreamInfo* streams, int streamCount, IExternalDevice** externalDevices = NULL, int extDevCount = 0);
 
 	/// <summary>
 	/// Disposes the LRCWriter.
