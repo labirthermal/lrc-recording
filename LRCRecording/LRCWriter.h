@@ -14,9 +14,8 @@ template <typename T> class LRCWriter : public RecorderWriter<T>
 private:
 	/// <summary>
 	/// LRCReader file signature.
-	/// Remember to write it including the terminating null.
 	/// </summary>
-	const string FileTypeHeader = "LRC";
+	const char FileTypeHeader[4] = "LRC";
 
 	long fileHeaderSize;
 
@@ -141,9 +140,11 @@ public:
 
 protected:
 	/// <summary>
-	/// Opens new file and writes file header.
+	/// Opens a file for recording. Appends a suffix to the file name if appropriate.
 	/// </summary>
-	void OpenFileWithSuffix(string fileName) override;
+	/// <param name="fileName">Output file name.</param>
+	/// <returns>Returns an error code.</returns>
+	int OpenFileWithSuffix(string fileName) override;
 
 private:
 	/// <summary>

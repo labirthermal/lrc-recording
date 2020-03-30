@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "LRCErrorCodes.h"
 #include "DataStructures.h"
 
 using namespace std;
@@ -139,7 +140,8 @@ public:
 	/// <param name="width">The frame width.</param>
 	/// <param name="height">The frame height.</param>
 	/// <param name="fileName">The recording file name.</param>
-	void RecordSingleFrame(T* data, int width, int height, string fileName);
+	/// <returns>Returns an error code.</returns>
+	int RecordSingleFrame(T* data, int width, int height, string fileName);
 
 	/// <summary>
 	/// Opens a file for manual recording.
@@ -151,7 +153,8 @@ public:
 	/// <param name="fileName">Output file name.</param>
 	/// <param name="width">Width of frames.</param>
 	/// <param name="height">Height of frames.</param>
-	void StartRecordingManually(string fileName, int width, int height);
+	/// <returns>Returns an error code.</returns>
+	int StartRecordingManually(string fileName, int width, int height);
 
 	/// <summary>
 	/// Records given data into the given stream of current position in file.
@@ -162,7 +165,8 @@ public:
 	/// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 	/// <param name="range">Range of data values. If null, the range will be calculated.</param>
 	/// <param name="frameTimestamp">Frame timestamp in milliseconds since 1.1.1970.</param>
-	void RecordFrame(T* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
+	/// <returns>Returns an error code.</returns>
+	int RecordFrame(T* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
 
 	/// <summary>
 	/// Closes the file being recorded.
@@ -265,8 +269,9 @@ private:
 	/// Suffixes the file name.
 	/// </summary>
 	/// <param name="fileName">The base file name.</param>
-	/// <returns>Returns the suffixed file name.</returns>
-	string SuffixFileName(string fileName);
+	/// <param name="suffixedName">Returns the suffixed file name.</param>
+	/// <returns>Returns an error code.</returns>
+	int SuffixFileName(string fileName, string* suffixedName);
 
 	/// <summary>
 	/// Appends a number to a file name so that such a file does not yet exist. Increments the file number counter.
@@ -302,26 +307,30 @@ protected:
 	/// Ensures the existence of directory tree for the given file name.
 	/// </summary>
 	/// <param name="fileName">The file name.</param>
-	void EnsureDirectory(string fileName);
+	/// <returns>Returns an error code.</returns>
+	int EnsureDirectory(string fileName);
 
 	/// <summary>
 	/// Opens a file for recording.
 	/// </summary>
 	/// <param name="fileName">The file name.</param>
-	void OpenFile(string fileName);
+	/// <returns>Returns an error code.</returns>
+	int OpenFile(string fileName);
 
 	/// <summary>
 	/// Opens a file for recording. Appends a suffix to the file name if appropriate.
 	/// </summary>
 	/// <param name="fileName">Output file name.</param>
-	virtual void OpenFileWithSuffix(string fileName);
+	/// <returns>Returns an error code.</returns>
+	virtual int OpenFileWithSuffix(string fileName);
 
 private:
 	/// <summary>
 	/// Checks whether there is enough space for another frame in the file.
 	/// Should the file exceed the allowed size, a new file will be created.
 	/// </summary>
-	void CheckFileSize();
+	/// <returns>Returns an error code.</returns>
+	int CheckFileSize();
 
 protected:
 	/// <summary>
@@ -366,7 +375,8 @@ protected:
 	/// </summary>
 	/// <param name="str">The string to write.</param>
 	/// <param name="totalLength">The total number of bytes to write.</param>
-	void WriteString(string str, int totalLength = 0);
+	/// <returns>Returns an error code.</returns>
+	int WriteString(string str, int totalLength = 0);
 
 	/// <summary>
 	/// Writes a 2-byte unsigned integer to the file in big endian.

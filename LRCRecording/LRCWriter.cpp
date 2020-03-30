@@ -14,11 +14,11 @@ LRCWriter<T>::LRCWriter(StreamInfo* streams, int streamCount, IExternalDevice** 
 {
 	// check counts
 	if (streamCount == 0)
-		throw std::runtime_error("At least one stream must be given.");
+		throw LRC_ERR_NO_STREAM;
 	if (streamCount > UINT8_MAX)
-		throw std::runtime_error("Maximum of 255 streams are supported.");
+		throw LRC_ERR_TOO_MANY_STREAMS;
 	if (externalDevices && extDevCount > UINT8_MAX)
-		throw std::runtime_error("Maximum of 256 external devices are supported.");
+		throw LRC_ERR_TOO_MANY_DEVICES;
 
 	// copy streams
 	this->streams = new StreamInfo[streamCount];
@@ -51,16 +51,22 @@ LRCWriter<T>::~LRCWriter()
 }
 
 /// <summary>
-/// Opens new file and writes file header.
+/// Opens a file for recording. Appends a suffix to the file name if appropriate.
 /// </summary>
+/// <param name="fileName">Output file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void LRCWriter<T>::OpenFileWithSuffix(string fileName)
+int LRCWriter<T>::OpenFileWithSuffix(string fileName)
 {
-	RecorderWriter::OpenFileWithSuffix(fileName);
+	int err = RecorderWriter::OpenFileWithSuffix(fileName);
+	if (err != LRC_ERR_SUCCESS)
+		return err;
 
 	WriteFileHeader();
 
 	CalculateSizes();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -196,7 +202,7 @@ template <typename T>
 void LRCWriter<T>::WriteFileHeader()
 {
 	// static part of file header
-	WriteString(FileTypeHeader, 4);
+	fileOut.write(FileTypeHeader, 4 * sizeof(char));
 	// recording start datetime
 	uint64_t nowBin = TimeToBinary(GetTimeMs());
 	fileOut.write((char*)&nowBin, sizeof(uint64_t));

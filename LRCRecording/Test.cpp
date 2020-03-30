@@ -10,8 +10,8 @@ const int Height = 120;
 const string FileName = "recording.lrc";
 
 // the data type to test
-//typedef float TData;
-typedef uint16_t TData;
+typedef float TData;
+//typedef uint16_t TData;
 
 
 /// <summary>
@@ -76,7 +76,9 @@ void RecordImage()
 	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
 
 	// record one image
-	writer.RecordSingleFrame(data, Width, Height, FileName);
+	int err = writer.RecordSingleFrame(data, Width, Height, FileName);
+	if (LRC_FAILED(err))
+		printf("Recording image failed with error %d.", err);
 }
 
 /// <summary>
@@ -84,6 +86,8 @@ void RecordImage()
 /// </summary>
 void RecordSequence()
 {
+	int err;
+
 	// create the stream info
 	StreamInfo stream;
 	stream.dataType = StreamInfo::FileDataType::UInt16;	// output type
@@ -100,13 +104,29 @@ void RecordSequence()
 	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
 
 	// start recording
-	writer.StartRecordingManually(FileName, Width, Height);
+	err = writer.StartRecordingManually(FileName, Width, Height);
+	if (LRC_FAILED(err))
+	{
+		printf("Recording sequence failed with error code %d.", err);
+		return;
+	}
 
 	// record several frames
 	for (int i = 0; i < 5; i++)
 	{
+		// generate some data
 		GenerateData(data, Width * Height);
-		writer.RecordFrame(data);
+		
+		// record a frame
+		err = writer.RecordFrame(data);
+		if (LRC_FAILED(err))
+		{
+			printf("Recording frame failed with error code %d.", err);
+			writer.Close();
+			return;
+		}
+
+		// wait before the next frame
 		Sleep(200);
 	}
 
