@@ -54,6 +54,11 @@ private:
 	/// </summary>
 	thread playbackThread;
 
+	/// <summary>
+	/// The error code from the playback thread.
+	/// </summary>
+	int playbackThreadResult;
+
 
 
 public:
@@ -118,7 +123,8 @@ protected:
 	/// <summary>
 	/// Gets a frame from the source (camera, file).
 	/// </summary>
-	virtual void GetFrame() = 0;
+	/// <returns>Returns an error code.</returns>
+	virtual int GetFrame() = 0;
 
 public:
 	/// <summary>
@@ -132,14 +138,21 @@ public:
 	void Pause();
 
 	/// <summary>
+	/// Gets the playback thread error code.
+	/// </summary>
+	int GetPlaybackThreadResult() { return playbackThreadResult; }
+
+	/// <summary>
 	/// Advances to the next frame and reads it.
 	/// </summary>
-	void NextFrame();
+	/// <returns>Returns an error code.</returns>
+	int NextFrame();
 
 	/// <summary>
 	/// Rewinds to the beginning and reads the first frame.
 	/// </summary>
-	void Rewind();
+	/// <returns>Returns an error code.</returns>
+	int Rewind();
 
 	/// <summary>
 	/// Rewinds to the previous frame and reads it.

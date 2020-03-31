@@ -12,6 +12,7 @@ PlayableSource::PlayableSource(string sourceFileName)
 	firstFrameTimeStamp = 0;
 	duration = 0;
 	isPlaying = false;
+	playbackThreadResult = LRC_ERR_SUCCESS;
 
 	// store the source file name
 	this->sourceFileName = sourceFileName;
@@ -56,32 +57,41 @@ void PlayableSource::Pause()
 /// <summary>
 /// Advances to the next frame and reads it.
 /// </summary>
-void PlayableSource::NextFrame()
+/// <returns>Returns an error code.</returns>
+int PlayableSource::NextFrame()
 {
 	playbackMutex.lock();
 	
 	// do not read beyond the end
 	bool isNewFrame = false;
+	int err = LRC_ERR_SUCCESS;
 	if (currentFrameIndex < frameCount - 1)
 	{
 		isNewFrame = true;
 
 		// read a frame
 		currentFrameIndex++;
-		GetFrame();
+		err = GetFrame();
 	}
 
 	playbackMutex.unlock();
 
+	// check GetFrame result
+	if (LRC_FAILED(err))
+		return err;
+
 	// inform the base class that new data have been received
 	if (isNewFrame)
 		DataReceived();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Rewinds to the beginning and reads the first frame.
 /// </summary>
-void PlayableSource::Rewind()
+/// <returns>Returns an error code.</returns>
+int PlayableSource::Rewind()
 {
 	playbackMutex.lock();
 
@@ -90,12 +100,18 @@ void PlayableSource::Rewind()
 
 	// read the first frame
 	currentFrameIndex = 0;
-	GetFrame();
-	
+	int err = GetFrame();
+
 	playbackMutex.unlock();
+
+	// check GetFrame result
+	if (LRC_FAILED(err))
+		return err;
 
 	// inform the base class that new data have been received
 	DataReceived();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -112,6 +128,7 @@ int PlayableSource::PreviousFrame()
 
 	// do not go before the beginning
 	bool isNewFrame = false;
+	int err = LRC_ERR_SUCCESS;
 	if (currentFrameIndex > 0)
 	{
 		isNewFrame = true;
@@ -121,10 +138,14 @@ int PlayableSource::PreviousFrame()
 
 		// read the frame
 		currentFrameIndex--;
-		GetFrame();
+		err = GetFrame();
 	}
 	
 	playbackMutex.unlock();
+
+	// check GetFrame result
+	if (LRC_FAILED(err))
+		return err;
 
 	// inform the base class that new data have been received
 	if (isNewFrame)
@@ -157,9 +178,13 @@ int PlayableSource::SeekToFrame(int frameIndex)
 
 	// read the frame
 	currentFrameIndex = frameIndex;
-	GetFrame();
+	int err = GetFrame();
 	
 	playbackMutex.unlock();
+
+	// check GetFrame result
+	if (LRC_FAILED(err))
+		return err;
 
 	// inform the base class that new data have been received
 	DataReceived();
@@ -172,6 +197,9 @@ int PlayableSource::SeekToFrame(int frameIndex)
 /// </summary>
 void PlayableSource::PlaybackThread()
 {
+	// reset error code
+	playbackThreadResult = LRC_ERR_SUCCESS;
+
 	// while playback is on
 	while (isPlaying)
 	{
@@ -179,9 +207,18 @@ void PlayableSource::PlaybackThread()
 
 		// read a frame
 		currentFrameIndex++;
-		GetFrame();
+		int err = GetFrame();
 
 		playbackMutex.unlock();
+
+		// check GetFrame result
+		if (LRC_FAILED(err))
+		{
+			// stop the playback
+			isPlaying = false;
+			playbackThreadResult = err;
+			return;
+		}
 
 		// inform the base class that new data have been received
 		DataReceived();
@@ -190,6 +227,8 @@ void PlayableSource::PlaybackThread()
 		ScheduleNextFrame();
 		this_thread::sleep_until(nextFramePlayTime);
 	}
+
+	// do not set error code to success here, we might got here from some error so leave the result as is
 }
 
 /// <summary>
