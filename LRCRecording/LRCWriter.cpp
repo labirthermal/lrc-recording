@@ -14,11 +14,11 @@ LRCWriter<T>::LRCWriter(LRCCommon::StreamInfo* streams, int streamCount, IExtern
 {
 	// check counts
 	if (streamCount == 0)
-		throw runtime_error("At least one stream must be given.");
+		throw LRC_ERR_NO_STREAM;
 	if (streamCount > UINT8_MAX)
-		throw runtime_error("Maximum of 255 streams are supported.");
+		throw LRC_ERR_TOO_MANY_STREAMS;
 	if (externalDevices && extDevCount > UINT8_MAX)
-		throw runtime_error("Maximum of 256 external devices are supported.");
+		throw LRC_ERR_TOO_MANY_DEVICES;
 
 	// copy streams
 	this->streams = new LRCCommon::StreamInfo[streamCount];
@@ -51,16 +51,22 @@ LRCWriter<T>::~LRCWriter()
 }
 
 /// <summary>
-/// Opens new file and writes file header.
+/// Opens a file for recording. Appends a suffix to the file name if appropriate.
 /// </summary>
+/// <param name="fileName">Output file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void LRCWriter<T>::OpenFileWithSuffix(string fileName)
+int LRCWriter<T>::OpenFileWithSuffix(string fileName)
 {
-	RecorderWriter::OpenFileWithSuffix(fileName);
+	int err = RecorderWriter::OpenFileWithSuffix(fileName);
+	if (err != LRC_ERR_SUCCESS)
+		return err;
 
 	WriteFileHeader();
 
 	CalculateSizes();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>

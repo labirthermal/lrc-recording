@@ -147,9 +147,11 @@ public:
 
 protected:
 	/// <summary>
-	/// Opens new file and writes file header.
+	/// Opens a file for recording. Appends a suffix to the file name if appropriate.
 	/// </summary>
-	void OpenFileWithSuffix(string fileName) override;
+	/// <param name="fileName">Output file name.</param>
+	/// <returns>Returns an error code.</returns>
+	int OpenFileWithSuffix(string fileName) override;
 
 private:
 	/// <summary>

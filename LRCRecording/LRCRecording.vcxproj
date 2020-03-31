@@ -156,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DateTime.h" />
+    <ClInclude Include="LRCErrorCodes.h" />
     <ClInclude Include="include\dirent.h" />
     <ClInclude Include="LRCCommon.h" />
     <ClInclude Include="LRCWriter.h" />

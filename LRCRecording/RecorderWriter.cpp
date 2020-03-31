@@ -30,15 +30,26 @@ RecorderWriter<T>::~RecorderWriter()
 /// <param name="width">The frame width.</param>
 /// <param name="height">The frame height.</param>
 /// <param name="fileName">The recording file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::RecordSingleFrame(T* data, int width, int height, string fileName)
+int RecorderWriter<T>::RecordSingleFrame(T* data, int width, int height, string fileName)
 {
+	int err;
+
 	// open the file
-	StartRecordingManually(fileName, width, height);
+	err = StartRecordingManually(fileName, width, height);
+	if (LRC_FAILED(err))
+		return err;
+
 	// record the frame
-	RecordFrame(data);
+	err = RecordFrame(data);
+	if (LRC_FAILED(err))
+		return err;
+	
 	// done
 	Close();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -51,11 +62,13 @@ void RecorderWriter<T>::RecordSingleFrame(T* data, int width, int height, string
 /// <param name="fileName">Output file name.</param>
 /// <param name="width">Width of frames.</param>
 /// <param name="height">Height of frames.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::StartRecordingManually(string fileName, int width, int height)
+int RecorderWriter<T>::StartRecordingManually(string fileName, int width, int height)
 {
+	// check recording is not already running
 	if (fileOut.is_open())
-		throw std::runtime_error("Recording already running.");
+		return LRC_ERR_REC_RUNNING;
 
 	// reset recording files
 	frameCount = 0;
@@ -66,10 +79,14 @@ void RecorderWriter<T>::StartRecordingManually(string fileName, int width, int h
 	this->height = height;
 
 	// open the output file
-	OpenFileWithSuffix(fileName);
+	int err = OpenFileWithSuffix(fileName);
+	if (LRC_FAILED(err))
+		return err;
 
 	// initialise recording
 	InitialiseRecording();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -81,8 +98,9 @@ void RecorderWriter<T>::StartRecordingManually(string fileName, int width, int h
 /// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 /// <param name="range">Range of data values. If null, the range will be calculated.</param>
 /// <param name="frameTimestamp">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
+int RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
 {
 	// if no data rectangle is specified, make it across the whole frame
 	if (dataRect.IsEmpty())
@@ -92,10 +110,11 @@ void RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, 
 		frameTimestamp = DateTime::Now();
 
 	//if (!CheckRectSize(data, dataRect))
-	//	throw "Data rectangle doesn't fit into frame size or data is smaller than data rectangle.";
+	//	return LRC_ERR_GENERAL; // "Data rectangle doesn't fit into frame size or data is smaller than data rectangle.";
 
+	// check a recording file is open
 	if (!fileOut.is_open())
-		throw std::runtime_error("Recording file is not opened.");
+		return LRC_ERR_REC_NOT_OPEN;
 
 	// store the starting time
 	if (recordingStartTime == 0)
@@ -106,7 +125,11 @@ void RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, 
 
 	// split the file if it is too big
 	if (isAtEnd && doSplitLargeFiles)
-		CheckFileSize();
+	{
+		int err = CheckFileSize();
+		if (LRC_FAILED(err))
+			return err;
+	}
 
 	// update the data range
 	if (range.IsEmpty())
@@ -122,6 +145,8 @@ void RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, 
 		duration = frameTimestamp - recordingStartTime;
 	}
 	nextFrameIndex++;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -242,27 +267,33 @@ void RecorderWriter<T>::FindNextRecordingNumber(string fileName)
 /// Suffixes the file name.
 /// </summary>
 /// <param name="fileName">The base file name.</param>
-/// <returns>Returns the suffixed file name.</returns>
+/// <param name="suffixedName">Returns the suffixed file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-string RecorderWriter<T>::SuffixFileName(string fileName)
+int RecorderWriter<T>::SuffixFileName(string fileName, string* suffixedName)
 {
 	// store the base file name
 	baseFileName = fileName;
 
-	switch (GetRecordingSuffix())
+	switch (recordingSuffixStyle)
 	{
 	case RecordingSuffix::None:
-		return fileName;
+		*suffixedName = fileName;
+		break;
 
 	case RecordingSuffix::Number:
-		return AppendNumberToFileName(fileName);
+		*suffixedName = AppendNumberToFileName(fileName);
+		break;
 
 	case RecordingSuffix::Timestamp:
-		return AppendTimestampToFileName(fileName);
+		*suffixedName = AppendTimestampToFileName(fileName);
+		break;
 
 	default:
-		throw std::runtime_error("Recording suffix style is not implemented.");
+		return LRC_ERR_UNKNOWN_SUFFIX;
 	}
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -362,8 +393,9 @@ bool RecorderWriter<T>::FileExists(string fileName)
 /// Inspired by https://stackoverflow.com/a/12904145
 /// </summary>
 /// <param name="fileName">The file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::EnsureDirectory(string fileName)
+int RecorderWriter<T>::EnsureDirectory(string fileName)
 {
 	size_t pos = 0;
 	while ((pos = fileName.find_first_of("\\/", pos)) != string::npos)
@@ -382,50 +414,68 @@ void RecorderWriter<T>::EnsureDirectory(string fileName)
 #endif
 			// check errors
 			if (mdret && errno != EEXIST)
-				throw std::runtime_error("Cannot create directory tree.");
+				return LRC_ERR_CREATE_DIR;
 		}
 	}
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Opens a file for recording.
 /// </summary>
 /// <param name="fileName">The file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::OpenFile(string fileName)
+int RecorderWriter<T>::OpenFile(string fileName)
 {
 	// make sure the directory exists
-	EnsureDirectory(fileName);
+	int err = EnsureDirectory(fileName);
+	if (LRC_FAILED(err))
+		return err;
 
 	// open the output file and its reader/writer
 	fileOut.open(fileName, ofstream::binary);
 	actualFileName = fileName;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Opens a file for recording. Appends a suffix to the file name if appropriate.
 /// </summary>
 /// <param name="fileName">Output file name.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::OpenFileWithSuffix(string fileName)
+int RecorderWriter<T>::OpenFileWithSuffix(string fileName)
 {
+	int err;
+
 	// append a suffix to avoid overwriting existing files
-	fileName = SuffixFileName(fileName);
+	string suffixedName;
+	err = SuffixFileName(fileName, &suffixedName);
+	if (LRC_FAILED(err))
+		return err;
 
 	// double check the file does not exist
-	if (FileExists(fileName))
-		throw std::runtime_error("The file \"" + fileName + "\" already exists.");
+	if (FileExists(suffixedName))
+		return LRC_ERR_FILE_EXISTS;
 	
 	// open the file
-	OpenFile(fileName);
+	err = OpenFile(suffixedName);
+	if (LRC_FAILED(err))
+		return err;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Checks whether there is enough space for another frame in the file.
 /// Should the file exceed the allowed size, a new file will be created.
 /// </summary>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::CheckFileSize()
+int RecorderWriter<T>::CheckFileSize()
 {
 	// would writing another frame exceed the allowed file size?
 	if ((long)fileOut.tellp() + GetFrameSize() > MaxFileSize)
@@ -436,11 +486,17 @@ void RecorderWriter<T>::CheckFileSize()
 		// suspend overwriting files
 		bool wasRewrite = GetRewriteFiles();
 		SetRewriteFiles(false);
+
 		// open the new file
-		OpenFileWithSuffix(baseFileName);
+		int err = OpenFileWithSuffix(baseFileName);
+		if (LRC_FAILED(err))
+			return err;
+
 		// restore overwriting setting
 		SetRewriteFiles(wasRewrite);
 	}
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -511,14 +567,15 @@ void RecorderWriter<T>::WriteZeros(int count)
 /// </summary>
 /// <param name="str">The string to write.</param>
 /// <param name="totalLength">The total number of bytes to write.</param>
+/// <returns>Returns an error code.</returns>
 template <typename T>
-void RecorderWriter<T>::WriteString(string str, int totalLength)
+int RecorderWriter<T>::WriteString(string str, int totalLength)
 {
 	int byteCount = str.length();
 	
 	// check string length
 	if (totalLength > 0 && byteCount > totalLength)
-		throw std::runtime_error("The string is too long. It does not fit the desired length.");
+		return LRC_ERR_STR_TOO_LONG;
 
 	// write the string
 	fileOut << str;
@@ -527,6 +584,8 @@ void RecorderWriter<T>::WriteString(string str, int totalLength)
 	int paddingBytes = totalLength - byteCount;
 	if (paddingBytes > 0)
 		WriteZeros(paddingBytes);
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>

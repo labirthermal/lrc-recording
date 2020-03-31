@@ -37,6 +37,9 @@
     <ClInclude Include="include\dirent.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="LRCErrorCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="TemperatureSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
