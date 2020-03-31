@@ -40,3 +40,12 @@
 
 // Too many external devices provided for LRC Writer
 #define LRC_ERR_TOO_MANY_DEVICES	10
+
+// PlayableSource does not support stepping back
+#define LRC_ERR_CANNOT_STEP_BACK	11
+
+// PlayableSource does not support seeking
+#define LRC_ERR_CANNOT_SEEK		12
+
+// Frame index is out of range
+#define LRC_ERR_FRAME_INDEX_OUT		13

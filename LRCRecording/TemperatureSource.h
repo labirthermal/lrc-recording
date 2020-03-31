@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "LRCErrorCodes.h"
 #include "DataStructures.h"
 
 /// <summary>

@@ -101,11 +101,12 @@ void PlayableSource::Rewind()
 /// <summary>
 /// Rewinds to the previous frame and reads it.
 /// </summary>
-void PlayableSource::PreviousFrame()
+/// <returns>Returns an error code.</returns>
+int PlayableSource::PreviousFrame()
 {
 	// make sure we can step backward
 	if (!CanStepBackward())
-		throw runtime_error("This PlayableSource does not support stepping backwards.");
+		return LRC_ERR_CANNOT_STEP_BACK;
 
 	playbackMutex.lock();
 
@@ -128,21 +129,24 @@ void PlayableSource::PreviousFrame()
 	// inform the base class that new data have been received
 	if (isNewFrame)
 		DataReceived();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Seeks to the given frame and reads it.
 /// </summary>
 /// <param name="frameIndex">The zero-based frame index.</param>
-void PlayableSource::SeekToFrame(int frameIndex)
+/// <returns>Returns an error code.</returns>
+int PlayableSource::SeekToFrame(int frameIndex)
 {
 	// make sure we can seek
 	if (!CanSeek())
-		throw runtime_error("This PlayableSource does not support seeking.");
+		return LRC_ERR_CANNOT_SEEK;
 
 	// check bounds
 	if (frameIndex < 0 || frameIndex >= frameCount)
-		throw runtime_error("Frame index out of range.");
+		return LRC_ERR_FRAME_INDEX_OUT;
 	// NextFrame and PreviousFrame consume errors because it's quite normal to attempt
 	// to read one frame over the bound. But here the exact index should be correct.
 
@@ -159,6 +163,8 @@ void PlayableSource::SeekToFrame(int frameIndex)
 
 	// inform the base class that new data have been received
 	DataReceived();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "OfflineSource.h"
 
 /// <summary>
@@ -143,13 +144,15 @@ public:
 	/// <summary>
 	/// Rewinds to the previous frame and reads it.
 	/// </summary>
-	void PreviousFrame();
+	/// <returns>Returns an error code.</returns>
+	int PreviousFrame();
 
 	/// <summary>
 	/// Seeks to the given frame and reads it.
 	/// </summary>
 	/// <param name="frameIndex">The zero-based frame index.</param>
-	void SeekToFrame(int frameIndex);
+	/// <returns>Returns an error code.</returns>
+	int SeekToFrame(int frameIndex);
 
 protected:
 	/// <summary>
