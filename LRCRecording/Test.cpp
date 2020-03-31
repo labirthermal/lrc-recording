@@ -14,58 +14,6 @@ typedef float TData;
 //typedef uint16_t TData;
 
 
-// testing external device
-class TestExtDev : IExternalDevice
-{
-private:
-	char* data;
-
-public:
-	TestExtDev()
-	{
-		data = new char[4];
-		data[0] = 0;
-		data[1] = 10;
-		data[2] = 20;
-		data[3] = 30;
-	}
-
-	string GetName() override
-	{
-		return u8"Test device";
-	}
-
-	uint16_t GetDataSize() override
-	{
-		return 4;
-	}
-
-	const char* GetBinaryData() override
-	{
-		data[0]++;
-		return data;
-	}
-
-	void SetBinaryData(const char* data) override
-	{
-		memcpy((void*)this->data, data, GetDataSize());
-	}
-
-	string GetFormattedData() override
-	{
-		string result = "{";
-		// first item
-		if (GetDataSize() > 0)
-			result.append(to_string(data[0]));
-		// following items separated by a comma
-		for (int i = 1; i < GetDataSize(); i++)
-			result.append(", " + to_string(data[i]));
-		result.append("}");
-		return result;
-	}
-};
-
-
 /// <summary>
 /// Generates random data of type float.
 /// </summary>
@@ -150,8 +98,10 @@ void RecordSequence()
 	TData data[Width * Height];
 
 	// create an external device
-	TestExtDev* extDevices[1];
-	extDevices[0] = new TestExtDev();
+	BasicExternalDevice* extDevices[1];
+	extDevices[0] = new BasicExternalDevice(u8"Test device", 4);
+	char extDevData[4] { 0, 10, 20, 30 };
+	extDevices[0]->SetBinaryData(extDevData);
 
 	// create the writer
 	LRCWriter<TData> writer(&stream, 1, (IExternalDevice**)extDevices, 1);
@@ -172,6 +122,9 @@ void RecordSequence()
 	{
 		// generate some data
 		GenerateData(data, Width * Height);
+		// modify external device data
+		extDevData[0]++;
+		extDevices[0]->SetBinaryData(extDevData);
 		
 		// record a frame
 		err = writer.RecordFrame(data);

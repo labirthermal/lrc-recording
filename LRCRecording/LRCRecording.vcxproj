@@ -156,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DateTime.h" />
+    <ClInclude Include="ExternalDevice.h" />
     <ClInclude Include="LRCErrorCodes.h" />
     <ClInclude Include="include\dirent.h" />
     <ClInclude Include="LRCCommon.h" />
@@ -170,6 +171,7 @@
   <ItemGroup>
     <ClCompile Include="DataStructures.h" />
     <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="ExternalDevice.cpp" />
     <ClCompile Include="LRCCommon.cpp" />
     <ClCompile Include="LRCWriter.cpp" />
     <ClCompile Include="PlayableSource.cpp" />

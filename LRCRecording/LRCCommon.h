@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "DataStructures.h"
+#include "ExternalDevice.h"
 
 /// <summary>
 /// Common things for LRC reader and writer.
