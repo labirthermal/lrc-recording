@@ -160,6 +160,7 @@
     <ClInclude Include="LRCErrorCodes.h" />
     <ClInclude Include="include\dirent.h" />
     <ClInclude Include="LRCCommon.h" />
+    <ClInclude Include="LRCReader.h" />
     <ClInclude Include="LRCWriter.h" />
     <ClInclude Include="OfflineSource.h" />
     <ClInclude Include="PlayableSource.h" />
@@ -173,6 +174,7 @@
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="ExternalDevice.cpp" />
     <ClCompile Include="LRCCommon.cpp" />
+    <ClCompile Include="LRCReader.cpp" />
     <ClCompile Include="LRCWriter.cpp" />
     <ClCompile Include="PlayableSource.cpp" />
     <ClCompile Include="RecorderWriter.cpp" />

@@ -48,4 +48,16 @@
 #define LRC_ERR_CANNOT_SEEK		12
 
 // Frame index is out of range
-#define LRC_ERR_FRAME_INDEX_OUT		13
+#define LRC_ERR_FRAME_INDEX_OUT	13
+
+// Cannot determine LRC file size
+#define LRC_ERR_DET_FILE_SIZE	14
+
+// Unknown recording file signature
+#define LRC_ERR_FILE_SIGNATURE	15
+
+// Unsupported LRC file version
+#define LRC_ERR_FILE_VERSION	16
+
+// Optional data in LRC header are not supported
+#define LRC_ERR_OPTIONAL_DATA	17

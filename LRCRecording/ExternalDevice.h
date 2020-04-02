@@ -40,7 +40,7 @@ public:
 
 
 
-class BasicExternalDevice : IExternalDevice
+class BasicExternalDevice : public IExternalDevice
 {
 protected:
 	/// <summary>

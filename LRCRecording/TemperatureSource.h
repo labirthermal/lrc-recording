@@ -36,6 +36,16 @@ protected:
 	/// </summary>
 	ObjectParameters objectParams;
 
+	/// <summary>
+	/// The number of streams in this temperature source.
+	/// </summary>
+	uint8_t streamCount;
+
+	/// <summary>
+	/// The selected stream index.
+	/// </summary>
+	uint8_t selectedStreamIndex;
+
 public:
 	/// <summary>
 	/// Function prototype of the callback for notifying when new temperature data are available.
@@ -118,5 +128,20 @@ public:
 	/// Used for on-line sources such as cameras.
 	/// </summary>
 	virtual void SetObjectParameters(ObjectParameters value) = 0;
+
+	/// <summary>
+	/// Gets the number of streams.
+	/// </summary>
+	uint8_t GetStreamCount() { return streamCount; }
+
+	/// <summary>
+	/// Gets the selected stream index.
+	/// </summary>
+	uint8_t GetSelectedStreamIndex() { return selectedStreamIndex; }
+
+	/// <summary>
+	/// Sets the selected stream index.
+	/// </summary>
+	virtual void SetSelectedStreamIndex(uint8_t value) { selectedStreamIndex = value; }
 };
 

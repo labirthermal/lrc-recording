@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "LRCWriter.h"
+#include "LRCReader.h"
 
 const int Width = 160;
 const int Height = 120;
@@ -84,7 +85,8 @@ void RecordImage()
 /// <summary>
 /// Records several images as a sequence.
 /// </summary>
-void RecordSequence()
+/// <returns>Returns the name of the recorded file.</returns>
+string RecordSequence()
 {
 	int err;
 
@@ -114,7 +116,7 @@ void RecordSequence()
 	if (LRC_FAILED(err))
 	{
 		printf("Recording sequence failed with error code %d.", err);
-		return;
+		return "";
 	}
 
 	// record several frames
@@ -132,15 +134,31 @@ void RecordSequence()
 		{
 			printf("Recording frame failed with error code %d.", err);
 			writer.Close();
-			return;
+			return "";
 		}
 
 		// wait before the next frame
 		Sleep(200);
 	}
 
+	// get the recording file name
+	string recordingName = writer.GetActualFileName();
+
 	// finish recording
 	writer.Close();
+
+	return recordingName;
+}
+
+/// <summary>
+/// Called when the reader reads a new frame.
+/// </summary>
+/// <param name="data">Frame data.</param>
+/// <param name="range">Frame data range.</param>
+/// <param name="timeStamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
+void NewFrameCallback(float* data, Range* range, uint64_t timeStamp)
+{
+	printf("Frame read: min %f, max %f\n", range->min, range->max);
 }
 
 /// <summary>
@@ -149,9 +167,29 @@ void RecordSequence()
 /// </summary>
 int main()
 {
+	// save an image
+	printf("Saving image...\n");
 	RecordImage();
 
-	RecordSequence();
+	// record a sequence
+	printf("Recording sequence...\n");
+	string recordingName = RecordSequence();
+
+	// open the recorded sequence
+	printf("Opening recorded sequence...\n");
+	LRCReader reader(recordingName);
+	// register callback for processing frames
+	reader.RegisterNewDataCallback(&NewFrameCallback);
+	// start playback
+	reader.Play();
+	// wait for playback to finish
+	while (reader.IsPlaying())
+		Sleep(100);
+	// finished
+	printf("Sequence playback finished.\n");
+
+	// manual playback: reader.NextFrame and reader.GetNextFrameTimeStamp
+	// access current frame data: reader.GetTemperatureData, reader.GetDataRange, reader.GetFrameTimeStamp
 
     return 0;
 }

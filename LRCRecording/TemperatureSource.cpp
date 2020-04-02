@@ -11,6 +11,8 @@ TemperatureSource::TemperatureSource()
 	range.ResetActualRange();
 	frameTimeStamp = 0;
 	cameraParams = CameraParameters();
+	streamCount = 1;
+	selectedStreamIndex = 0;
 	newDataCallback = NULL;
 }
 
