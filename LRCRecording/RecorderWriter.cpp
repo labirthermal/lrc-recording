@@ -478,7 +478,7 @@ template <typename T>
 int RecorderWriter<T>::CheckFileSize()
 {
 	// would writing another frame exceed the allowed file size?
-	if ((long)fileOut.tellp() + GetFrameSize() > MaxFileSize)
+	if ((long)fileOut.tellp() + GetFrameSize() > maxFileSize)
 	{
 		// close the current file
 		Close();

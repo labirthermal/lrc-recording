@@ -21,17 +21,18 @@ public:
 	/// </summary>
 	enum RecordingSuffix { None, Number, Timestamp };
 
-protected:
+private:
 	/// <summary>
 	/// The maximal allowed file size.
 	/// </summary>
-	const long MaxFileSize =  1024 * 1024 * 1024;	// 1 GB
+	long maxFileSize =  1024 * 1024 * 1024;	// 1 GB
 
 	/// <summary>
 	/// Indicates whether to split large files.
 	/// </summary>
 	bool doSplitLargeFiles = true;
 
+protected:
 	/// <summary>
 	/// The output file stream.
 	/// </summary>
@@ -219,6 +220,18 @@ public:
 	/// Gets the maximum frame height.
 	/// </summary>
 	int GetHeight() { return height; }
+
+	/// <summary>
+	/// Gets or sets the maximum recording file size before splitting into multiple files.
+	/// </summary>
+	long GetMaxFileSize() { return maxFileSize; }
+	void SetMaxFileSize(long value) { maxFileSize = value; }
+
+	/// <summary>
+	/// Gets or sets whether to split large recordings into multiple files.
+	/// </summary>
+	bool GetDoSplitLargeFiles() { return doSplitLargeFiles; }
+	void SetDoSplitLargeFiles(bool value) { doSplitLargeFiles = value; }
 
 	/// <summary>
 	/// Tells whether a number should be appended to the output file name
