@@ -23,7 +23,7 @@ TemperatureSource::~TemperatureSource()
 {
 	// free the temperature data array
 	if (data)
-		delete data;
+		delete[] data;
 }
 
 /// <summary>
@@ -33,7 +33,7 @@ void TemperatureSource::AllocateData()
 {
 	// free the previous array if any
 	if (data)
-		delete data;
+		delete[] data;
 
 	// allocate the new array
 	data = new float[cameraParams.width * cameraParams.height];

@@ -40,14 +40,14 @@ template <typename T>
 LRCWriter<T>::~LRCWriter()
 {
 	if (streamSizes)
-		delete streamSizes;
+		delete[] streamSizes;
 	if (streamHeaderSizes)
-		delete streamHeaderSizes;
+		delete[] streamHeaderSizes;
 
 	if (streams)
-		delete streams;
+		delete[] streams;
 	if (externalDevices)
-		delete externalDevices;
+		delete[] externalDevices;
 }
 
 /// <summary>

@@ -18,7 +18,7 @@ BasicExternalDevice::BasicExternalDevice(string name, uint16_t dataSize)
 /// </summary>
 BasicExternalDevice::~BasicExternalDevice()
 {
-	delete data;
+	delete[] data;
 }
 
 /// <summary>
