@@ -15,6 +15,13 @@ enum TemperatureSourceUnits { None, Intensity, Celsius, Kelvin, Time, Radians };
 
 
 /// <summary>
+/// Frame data types. This is the input data type. The recorder may save it to a file as a different type according to its settings.
+/// </summary>
+enum FrameDataType { Float, UInt16 };
+
+
+
+/// <summary>
 /// Rectangle with integer coordinates.
 /// </summary>
 struct Int32Rect

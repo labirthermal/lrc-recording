@@ -6,16 +6,14 @@ using namespace std;
 /// <summary>
 /// Creates the sequence recorder.
 /// </summary>
-template <typename T>
-RecorderWriter<T>::RecorderWriter()
+RecorderWriter::RecorderWriter()
 {
 }
 
 /// <summary>
 /// Disposes the recorder.
 /// </summary>
-template <typename T>
-RecorderWriter<T>::~RecorderWriter()
+RecorderWriter::~RecorderWriter()
 {
 	Close();
 }
@@ -27,12 +25,12 @@ RecorderWriter<T>::~RecorderWriter()
 /// Records a single frame.
 /// </summary>
 /// <param name="data">The frame data.</param>
+/// <param name="dataType">The frame data type.</param>
 /// <param name="width">The frame width.</param>
 /// <param name="height">The frame height.</param>
 /// <param name="fileName">The recording file name.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::RecordSingleFrame(T* data, int width, int height, string fileName)
+int RecorderWriter::RecordSingleFrame(void* data, FrameDataType dataType, int width, int height, string fileName)
 {
 	int err;
 
@@ -42,7 +40,7 @@ int RecorderWriter<T>::RecordSingleFrame(T* data, int width, int height, string 
 		return err;
 
 	// record the frame
-	err = RecordFrame(data);
+	err = RecordFrame(data, dataType);
 	if (LRC_FAILED(err))
 		return err;
 	
@@ -63,8 +61,7 @@ int RecorderWriter<T>::RecordSingleFrame(T* data, int width, int height, string 
 /// <param name="width">Width of frames.</param>
 /// <param name="height">Height of frames.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::StartRecordingManually(string fileName, int width, int height)
+int RecorderWriter::StartRecordingManually(string fileName, int width, int height)
 {
 	// check recording is not already running
 	if (fileOut.is_open())
@@ -94,18 +91,20 @@ int RecorderWriter<T>::StartRecordingManually(string fileName, int width, int he
 /// Use this method if writing whole new frame of completely rewriting existing frame (including header).
 /// </summary>
 /// <param name="data">Frame data.</param>
+/// <param name="dataType">The frame data type.</param>
 /// <param name="streamId">Stream ID.</param>
 /// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 /// <param name="range">Range of data values. If null, the range will be calculated.</param>
-/// <param name="frameTimestamp">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
+/// <param name="frameTimestamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
+int RecorderWriter::RecordFrame(void* data, FrameDataType dataType, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
 {
+	int err;
+
 	// if no data rectangle is specified, make it across the whole frame
 	if (dataRect.IsEmpty())
 		dataRect = Int32Rect(0, 0, width, height);
-	// if no timestamp is specified, record the current time
+	// if no time stamp is specified, record the current time
 	if (!frameTimestamp)
 		frameTimestamp = DateTime::Now();
 
@@ -126,17 +125,33 @@ int RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, R
 	// split the file if it is too big
 	if (isAtEnd && doSplitLargeFiles)
 	{
-		int err = CheckFileSize();
+		err = CheckFileSize();
 		if (LRC_FAILED(err))
 			return err;
 	}
 
-	// update the data range
+	// if no range was specified, find the data range
 	if (range.IsEmpty())
-		FindDataRange(data, dataRect.width * dataRect.height, &range);
+	{
+		switch (dataType)
+		{
+		case FrameDataType::Float:
+			UpdateDataRange((float*)data, dataRect.width * dataRect.height, &range);
+			break;
+
+		case FrameDataType::UInt16:
+			UpdateDataRange((uint16_t*)data, dataRect.width * dataRect.height, &range);
+			break;
+
+		default:
+			return LRC_ERR_FRAME_DATA_TYPE;
+		}
+	}
 
 	// record the frame
-	WriteFrame(data, streamId, dataRect, range, frameTimestamp);
+	err = WriteFrame(data, dataType, streamId, dataRect, range, frameTimestamp);
+	if (LRC_FAILED(err))
+		return err;
 
 	if (isAtEnd)
 	{
@@ -152,8 +167,7 @@ int RecorderWriter<T>::RecordFrame(T* data, char streamId, Int32Rect dataRect, R
 /// <summary>
 /// Closes the file being recorded.
 /// </summary>
-template <typename T>
-void RecorderWriter<T>::Close()
+void RecorderWriter::Close()
 {
 	// close the output file
 	if (fileOut.is_open())
@@ -166,8 +180,7 @@ void RecorderWriter<T>::Close()
 /// <summary>
 /// Initialises the recorder.
 /// </summary>
-template <typename T>
-void RecorderWriter<T>::InitialiseRecording()
+void RecorderWriter::InitialiseRecording()
 {
 	// recording started
 	recordedFrameCount = 0;
@@ -188,8 +201,7 @@ void RecorderWriter<T>::InitialiseRecording()
 /// </summary>
 /// <param name="text">The text to escape.</param>
 /// <returns>Returns the text with escaped characters.</returns>
-template <typename T>
-string RecorderWriter<T>::regex_escape(string text)
+string RecorderWriter::regex_escape(string text)
 {
 	const regex esc("[.^$|()\\[\\]{}*+?\\\\]");
 	const string rep("\\\\&");
@@ -200,8 +212,7 @@ string RecorderWriter<T>::regex_escape(string text)
 /// Finds the next number for the recording file.
 /// </summary>
 /// <param name="fileName">The base file name without the number appended.</param>
-template <typename T>
-void RecorderWriter<T>::FindNextRecordingNumber(string fileName)
+void RecorderWriter::FindNextRecordingNumber(string fileName)
 {
 	// split the file name to parts
 	int lastSlash = fileName.find_last_of("\\/");
@@ -269,8 +280,7 @@ void RecorderWriter<T>::FindNextRecordingNumber(string fileName)
 /// <param name="fileName">The base file name.</param>
 /// <param name="suffixedName">Returns the suffixed file name.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::SuffixFileName(string fileName, string* suffixedName)
+int RecorderWriter::SuffixFileName(string fileName, string* suffixedName)
 {
 	// store the base file name
 	baseFileName = fileName;
@@ -301,8 +311,7 @@ int RecorderWriter<T>::SuffixFileName(string fileName, string* suffixedName)
 /// </summary>
 /// <param name="fileName">The base file name.</param>
 /// <returns>Returns the numbered file name.</returns>
-template <typename T>
-string RecorderWriter<T>::AppendNumberToFileName(string fileName)
+string RecorderWriter::AppendNumberToFileName(string fileName)
 {
 	// make sure the file numbering is established
 	if (fileNumberingName != fileName)
@@ -341,24 +350,23 @@ string RecorderWriter<T>::AppendNumberToFileName(string fileName)
 }
 
 /// <summary>
-/// Appends the current timestamp to the file name.
+/// Appends the current time stamp to the file name.
 /// </summary>
 /// <param name="fileName">The base file name.</param>
-/// <returns>Returns the file name with the timestamp.</returns>
-template <typename T>
-string RecorderWriter<T>::AppendTimestampToFileName(string fileName)
+/// <returns>Returns the file name with the time stamp.</returns>
+string RecorderWriter::AppendTimestampToFileName(string fileName)
 {
 	// find the file extension
 	int lastDot = fileName.find_last_of('.');
 	if (lastDot < 0)
 		lastDot = fileName.length();
 
-	// construct the timestamp
+	// construct the time stamp
 	time_t timeSec = DateTime::Now() / 1000;
 	tm* timeLoc = localtime(&timeSec);
 	char timestamp[32];
 	strftime(timestamp, sizeof(timestamp), TimestampFormat.c_str(), timeLoc);
-	// insert the timestamp
+	// insert the time stamp
 	string result = fileName;
 	result.insert(lastDot, timestamp);
 
@@ -366,7 +374,7 @@ string RecorderWriter<T>::AppendTimestampToFileName(string fileName)
 	int num = 2;
 	while (FileExists(result))
 	{
-		// insert the timestamp with an additional counter
+		// insert the time stamp with an additional counter
 		char timestampNum[32];
 		snprintf(timestampNum, sizeof(timestampNum), "%s %d", timestamp, num);
 		result = fileName;
@@ -382,8 +390,7 @@ string RecorderWriter<T>::AppendTimestampToFileName(string fileName)
 /// </summary>
 /// <param name="fileName">The file name.</param>
 /// <returns>Returns true if the file exists, false otherwise.</returns>
-template <typename T>
-bool RecorderWriter<T>::FileExists(string fileName)
+bool RecorderWriter::FileExists(string fileName)
 {
 	return ifstream(fileName).good();
 }
@@ -394,8 +401,7 @@ bool RecorderWriter<T>::FileExists(string fileName)
 /// </summary>
 /// <param name="fileName">The file name.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::EnsureDirectory(string fileName)
+int RecorderWriter::EnsureDirectory(string fileName)
 {
 	size_t pos = 0;
 	while ((pos = fileName.find_first_of("\\/", pos)) != string::npos)
@@ -426,8 +432,7 @@ int RecorderWriter<T>::EnsureDirectory(string fileName)
 /// </summary>
 /// <param name="fileName">The file name.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::OpenFile(string fileName)
+int RecorderWriter::OpenFile(string fileName)
 {
 	// make sure the directory exists
 	int err = EnsureDirectory(fileName);
@@ -446,8 +451,7 @@ int RecorderWriter<T>::OpenFile(string fileName)
 /// </summary>
 /// <param name="fileName">Output file name.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::OpenFileWithSuffix(string fileName)
+int RecorderWriter::OpenFileWithSuffix(string fileName)
 {
 	int err;
 
@@ -474,8 +478,7 @@ int RecorderWriter<T>::OpenFileWithSuffix(string fileName)
 /// Should the file exceed the allowed size, a new file will be created.
 /// </summary>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::CheckFileSize()
+int RecorderWriter::CheckFileSize()
 {
 	// would writing another frame exceed the allowed file size?
 	if ((long)fileOut.tellp() + GetFrameSize() > maxFileSize)
@@ -500,17 +503,15 @@ int RecorderWriter<T>::CheckFileSize()
 }
 
 /// <summary>
-/// Finds the range of the data.
+/// Updates the range of the data.
 /// </summary>
 /// <param name="data">The data.</param>
 /// <param name="length">The length of data.</param>
-/// <param name="range">The range to store the result.</param>
-template <typename T>
-void RecorderWriter<T>::FindDataRange(const T* data, int length, Range* range)
+/// <param name="range">The range to update.</param>
+void RecorderWriter::UpdateDataRange(const float* data, int length, Range* range)
 {
-	range->ResetActualRange();
-
-	UpdateDataRange(data, length, range);
+	for (int i = 0; i < length; i++)
+		range->IncludeValue(data[i]);
 }
 
 /// <summary>
@@ -519,14 +520,10 @@ void RecorderWriter<T>::FindDataRange(const T* data, int length, Range* range)
 /// <param name="data">The data.</param>
 /// <param name="length">The length of data.</param>
 /// <param name="range">The range to update.</param>
-template <typename T>
-void RecorderWriter<T>::UpdateDataRange(const T* data, int length, Range* range)
+void RecorderWriter::UpdateDataRange(const uint16_t* data, int length, Range* range)
 {
 	for (int i = 0; i < length; i++)
-	{
-		range->IncludeValue(*data);
-		data++;
-	}
+		range->IncludeValue(data[i]);
 }
 
 /// <summary>
@@ -536,8 +533,7 @@ void RecorderWriter<T>::UpdateDataRange(const T* data, int length, Range* range)
 /// <param name="dataHeight">Data height.</param>
 /// <param name="rect">Rect where data will be written.</param>
 /// <returns>True if rect fit into frame and data is at least as large as rect. False otherwise.</returns>
-template <typename T>
-bool RecorderWriter<T>::CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect)
+bool RecorderWriter::CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect)
 {
 	return rect.x >= 0	// rect is inside frame
 		&& rect.y >= 0	// rect is inside frame
@@ -554,8 +550,7 @@ bool RecorderWriter<T>::CheckRectSize(int dataWidth, int dataHeight, Int32Rect r
 /// Writes zeros to the file.
 /// </summary>
 /// <param name="count">The number of bytes to write.</param>
-template <typename T>
-void RecorderWriter<T>::WriteZeros(int count)
+void RecorderWriter::WriteZeros(int count)
 {
 	for (int i = 0; i < count; i++)
 		fileOut.put(0);
@@ -568,8 +563,7 @@ void RecorderWriter<T>::WriteZeros(int count)
 /// <param name="str">The string to write.</param>
 /// <param name="totalLength">The total number of bytes to write.</param>
 /// <returns>Returns an error code.</returns>
-template <typename T>
-int RecorderWriter<T>::WriteString(string str, int totalLength)
+int RecorderWriter::WriteString(string str, int totalLength)
 {
 	int byteCount = str.length();
 	
@@ -592,8 +586,7 @@ int RecorderWriter<T>::WriteString(string str, int totalLength)
 /// Writes a 2-byte unsigned integer to the file in big endian.
 /// </summary>
 /// <param name="x">The value to write.</param>
-template <typename T>
-void RecorderWriter<T>::WriteUInt16BE(uint16_t x)
+void RecorderWriter::WriteUInt16BE(uint16_t x)
 {
 	fileOut.put(x >> 8);
 	fileOut.put(x & 0xFF);
@@ -603,8 +596,7 @@ void RecorderWriter<T>::WriteUInt16BE(uint16_t x)
 /// Writes a 4-byte unsigned integer to the file in big endian.
 /// </summary>
 /// <param name="x">The value to write.</param>
-template <typename T>
-void RecorderWriter<T>::WriteUInt32BE(uint32_t x)
+void RecorderWriter::WriteUInt32BE(uint32_t x)
 {
 	fileOut.put(x >> 24);
 	fileOut.put((x >> 16) & 0xFF);
@@ -617,10 +609,9 @@ void RecorderWriter<T>::WriteUInt32BE(uint32_t x)
 /// </summary>
 /// <param name="data">The raw radiometric data to write.</param>
 /// <param name="count">The number of elements to write.</param>
-template <typename T>
-void RecorderWriter<T>::WriteRawData(uint16_t* data, int count)
+void RecorderWriter::WriteRawData(uint16_t* data, int count)
 {
-	fileOut.write((char*)data, count * sizeof(data[0]));
+	fileOut.write((char*)data, count * sizeof(uint16_t));
 }
 
 /// <summary>
@@ -628,15 +619,10 @@ void RecorderWriter<T>::WriteRawData(uint16_t* data, int count)
 /// </summary>
 /// <param name="data">The data to write.</param>
 /// <param name="count">The number of elements to write.</param>
-template <typename T>
-void RecorderWriter<T>::WriteRawDataBE(uint16_t* data, int count)
+void RecorderWriter::WriteRawDataBE(uint16_t* data, int count)
 {
 	for (int i = 0; i < count; i++)
 		WriteUInt16BE(data[i]);
 }
 
 #pragma endregion
-
-// explicit instantiation
-template class RecorderWriter<float>;
-template class RecorderWriter<uint16_t>;

@@ -11,8 +11,8 @@ const int Height = 120;
 const string FileName = "recording.lrc";
 
 // the data type to test
-typedef float TData;
-//typedef uint16_t TData;
+#define DATA_TYPE_FLOAT
+//#define DATA_TYPE_UINT16
 
 
 /// <summary>
@@ -63,21 +63,36 @@ void RecordImage()
 	// create the stream info
 	LRCCommon::StreamInfo stream;
 	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
-	stream.units = TemperatureSourceUnits::Celsius;
 	stream.objectParams = ObjectParameters();
 
 	// generate some data
-	TData data[Width * Height];
+#ifdef DATA_TYPE_FLOAT
+	// temperatures in degrees Celsius
+	stream.units = TemperatureSourceUnits::Celsius;
+	// temperatures stored as float
+	FrameDataType dataType = FrameDataType::Float;
+	// generate data
+	float data[Width * Height];
 	GenerateData(data, Width * Height);
+#endif
+#ifdef DATA_TYPE_UINT16
+	// raw intensities
+	stream.units = TemperatureSourceUnits::Intensity;
+	// intensities stored as uint16
+	FrameDataType dataType = FrameDataType::UInt16;
+	// generate data
+	uint16_t data[Width * Height];
+	GenerateData(data, Width * Height);
+#endif
 
 	// create the writer
-	LRCWriter<TData> writer(&stream, 1, NULL, 0);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::None);
-	writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Number);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
+	LRCWriter writer(&stream, 1, NULL, 0);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::None);
+	writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Number);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
 
 	// record one image
-	int err = writer.RecordSingleFrame(data, Width, Height, FileName);
+	int err = writer.RecordSingleFrame(data, dataType, Width, Height, FileName);
 	if (LRC_FAILED(err))
 		printf("Recording image failed with error %d.", err);
 }
@@ -93,11 +108,23 @@ string RecordSequence()
 	// create the stream info
 	LRCCommon::StreamInfo stream;
 	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
-	stream.units = TemperatureSourceUnits::Celsius;
 	stream.objectParams = ObjectParameters();
 
 	// create buffer for data
-	TData data[Width * Height];
+#ifdef DATA_TYPE_FLOAT
+	// temperatures in degrees Celsius
+	stream.units = TemperatureSourceUnits::Celsius;
+	// temperatures stored as float
+	FrameDataType dataType = FrameDataType::Float;
+	float data[Width * Height];
+#endif
+#ifdef DATA_TYPE_UINT16
+	// raw intensities
+	stream.units = TemperatureSourceUnits::Intensity;
+	// intensities stored as uint16
+	FrameDataType dataType = FrameDataType::UInt16;
+	uint16_t data[Width * Height];
+#endif
 
 	// create an external device
 	BasicExternalDevice* extDevices[1];
@@ -106,10 +133,10 @@ string RecordSequence()
 	extDevices[0]->SetBinaryData(extDevData);
 
 	// create the writer
-	LRCWriter<TData> writer(&stream, 1, (IExternalDevice**)extDevices, 1);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::None);
-	writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Number);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
+	LRCWriter writer(&stream, 1, (IExternalDevice**)extDevices, 1);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::None);
+	writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Number);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
 
 	// start recording
 	err = writer.StartRecordingManually(FileName, Width, Height);
@@ -129,7 +156,7 @@ string RecordSequence()
 		extDevices[0]->SetBinaryData(extDevData);
 		
 		// record a frame
-		err = writer.RecordFrame(data);
+		err = writer.RecordFrame(data, dataType);
 		if (LRC_FAILED(err))
 		{
 			printf("Recording frame failed with error code %d.", err);

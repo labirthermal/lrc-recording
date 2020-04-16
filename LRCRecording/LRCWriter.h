@@ -9,8 +9,7 @@
 /// <summary>
 /// Class for creating LabIR specific sequence files.
 /// </summary>
-/// <typeparam name="T">The temperature data type.</typeparam>
-template <typename T> class LRCWriter : public RecorderWriter<T>
+class LRCWriter : public RecorderWriter
 {
 private:
 	/// <summary>
@@ -36,7 +35,7 @@ private:
 
 	/// <summary>
 	/// List of external devices.
-	/// Every time new frame is writen by RecordFrame every external device will be sampled and writen into frame.
+	/// Every time new frame is written by RecordFrame every external device will be sampled and written into frame.
 	/// Not sampled by UpdateFrame.
 	/// </summary>
 	IExternalDevice** externalDevices = NULL;
@@ -164,11 +163,13 @@ protected:
 	/// Writes data to first stream of next frame.
 	/// </summary>
 	/// <param name="data">Data array of frame.</param>
-	/// <param name="streamId">Id of stream that will be writen.</param>
-	/// <param name="rect">Rectangle where parameter data should be writen.</param>
+	/// <param name="dataType">The frame data type.</param>
+	/// <param name="streamId">Id of stream that will be written.</param>
+	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
-	/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
-	void WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
+	/// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
+	/// <returns>Returns an error code.</returns>
+	int WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
 
 #pragma region Write methods
 
@@ -181,7 +182,7 @@ private:
 	/// <summary>
 	/// Writes frame header into currently open file.
 	/// </summary>
-	/// <param name="dateTime">Frame UTC timestamp in milliseconds since 1.1.1970.</param>
+	/// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <param name="note">Note for this frame.</param>
 	void WriteFrameHeader(uint64_t dateTime, string note);
 
@@ -199,11 +200,18 @@ private:
 	void WriteStreamHeader(uint8_t streamId, Range dataRange);
 
 	/// <summary>
-	/// Writes temperature data to the file.
+	/// Writes float temperature data to the file.
 	/// </summary>
 	/// <param name="data">The temperature data (in degrees Celsius) to write.</param>
 	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
-	void WriteTemperatureData(T* data, Int32Rect dataRect, Range dataRange);
+	void WriteFrameData(float* data, Int32Rect dataRect, Range dataRange);
+
+	/// <summary>
+	/// Writes uint16 raw data to the file.
+	/// </summary>
+	/// <param name="data">The temperature data (type uint16) to write.</param>
+	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
+	void WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange);
 
 #pragma endregion
 	

@@ -61,3 +61,6 @@
 
 // Optional data in LRC header are not supported
 #define LRC_ERR_OPTIONAL_DATA	17
+
+// Unknown or incompatible frame data type
+#define LRC_ERR_FRAME_DATA_TYPE	18
