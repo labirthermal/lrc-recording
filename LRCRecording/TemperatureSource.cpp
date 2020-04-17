@@ -14,6 +14,7 @@ TemperatureSource::TemperatureSource()
 	streamCount = 1;
 	selectedStreamIndex = 0;
 	newDataCallback = NULL;
+	newDataCallbackUserData = NULL;
 }
 
 /// <summary>
@@ -43,9 +44,11 @@ void TemperatureSource::AllocateData()
 /// Registers a callback for notifying when new temperature data are available. Register NULL to unregister.
 /// </summary>
 /// <param name="callback">The callback.</param>
-void TemperatureSource::RegisterNewDataCallback(NewDataCallback callback)
+/// <param name="userData">User data object. It will be passed as argument when the callback is called.</param>
+void TemperatureSource::RegisterNewDataCallback(NewDataCallback callback, void* userData)
 {
 	newDataCallback = callback;
+	newDataCallbackUserData = userData;
 }
 
 /// <summary>
@@ -55,5 +58,5 @@ void TemperatureSource::DataReceived()
 {
 	// call the new data callback, if registered
 	if (newDataCallback)
-		newDataCallback(data, &range, frameTimeStamp);
+		newDataCallback(data, &range, frameTimeStamp, newDataCallbackUserData);
 }

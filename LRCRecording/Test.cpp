@@ -183,7 +183,8 @@ string RecordSequence()
 /// <param name="data">Frame data.</param>
 /// <param name="range">Frame data range.</param>
 /// <param name="timeStamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
-void NewFrameCallback(float* data, Range* range, uint64_t timeStamp)
+/// <param name="userData">User data object. Set when registering the callback.</param>
+void NewFrameCallback(float* data, Range* range, uint64_t timeStamp, void* userData)
 {
 	printf("Frame read: min %f, max %f\n", range->min, range->max);
 }
@@ -206,7 +207,7 @@ int main()
 	printf("Opening recorded sequence...\n");
 	LRCReader reader(recordingName);
 	// register callback for processing frames
-	reader.RegisterNewDataCallback(&NewFrameCallback);
+	reader.RegisterNewDataCallback(&NewFrameCallback, NULL);
 	// start playback
 	reader.Play();
 	// wait for playback to finish

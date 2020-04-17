@@ -52,14 +52,20 @@ public:
 	/// </summary>
 	/// <param name="data">The frame data.</param>
 	/// <param name="range">The data range.</param>
-	/// <param name="timeStamp">The frame time stamp.</param>
-	typedef void (*NewDataCallback)(float* data, Range* range, uint64_t timeStamp);
+	/// <param name="timeStamp">The frame UTC time stamp in milliseconds since 1.1.1970.</param>
+	/// <param name="userData">User data object. Set when registering the callback.</param>
+	typedef void (*NewDataCallback)(float* data, Range* range, uint64_t timeStamp, void* userData);
 
 private:
 	/// <summary>
 	/// Callback for notifying when new temperature data are available.
 	/// </summary>
 	NewDataCallback newDataCallback;
+
+	/// <summary>
+	/// User data object associated with the new data callback.
+	/// </summary>
+	void* newDataCallbackUserData;
 
 
 
@@ -90,7 +96,8 @@ public:
 	/// Registers a callback for notifying when new temperature data are available. Register NULL to unregister.
 	/// </summary>
 	/// <param name="callback">The callback.</param>
-	void RegisterNewDataCallback(NewDataCallback callback);
+	/// <param name="userData">User data object. It will be passed as argument when the callback is called.</param>
+	void RegisterNewDataCallback(NewDataCallback callback, void* userData);
 
 	/// <summary>
 	/// Gets the current frame time stamp.
