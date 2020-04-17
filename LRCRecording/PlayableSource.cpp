@@ -49,9 +49,12 @@ void PlayableSource::Pause()
 {
 	// disable playback
 	isPlaying = false;
-	// do not join the thread, it could take too long for slow frame rates
-	if (playbackThread.get_id() != thread::id::id())
-		playbackThread.detach();
+	// wake up the playback thread
+	schedulingCondVar.notify_all();
+
+	// if the playback thread exists and it is not this thread
+	if (playbackThread.joinable() && playbackThread.get_id() != this_thread::get_id())
+		playbackThread.join();
 }
 
 /// <summary>
@@ -200,6 +203,9 @@ void PlayableSource::PlaybackThread()
 	// reset error code
 	playbackThreadResult = LRC_ERR_SUCCESS;
 
+	// create a lock for the condition variable
+	unique_lock<mutex> schedulingLock(schedulingMutex);
+
 	// while playback is on
 	while (isPlaying)
 	{
@@ -225,7 +231,9 @@ void PlayableSource::PlaybackThread()
 
 		// wait until the next frame
 		ScheduleNextFrame();
-		this_thread::sleep_until(nextFramePlayTime);
+		schedulingCondVar.wait_until(schedulingLock, nextFramePlayTime,
+			// filter out spurious wake ups
+			[&] { return chrono::steady_clock::now() >= nextFramePlayTime; });
 	}
 
 	// do not set error code to success here, we might got here from some error so leave the result as is
@@ -244,7 +252,7 @@ void PlayableSource::ScheduleNextFrame()
 		Pause();
 	else
 	{
-		// calculate the time to the next frame
+		// calculate the time to the next frame (measured from the previous frame, not from now)
 		uint64_t timeToNextFrame = GetNextFrameTimeStamp() - frameTimeStamp;
 		
 		// store the time when the next frame should be played

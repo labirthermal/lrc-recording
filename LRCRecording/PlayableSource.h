@@ -59,6 +59,16 @@ private:
 	/// </summary>
 	int playbackThreadResult;
 
+	/// <summary>
+	/// A mutex for the scheduling lock for the scheduling condition variable.
+	/// </summary>
+	mutex schedulingMutex;
+
+	/// <summary>
+	/// A condition variable used in the playback thread for waiting for the next frame.
+	/// </summary>
+	condition_variable schedulingCondVar;
+
 
 
 public:
