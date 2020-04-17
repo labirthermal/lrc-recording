@@ -404,6 +404,10 @@ bool RecorderWriter::FileExists(string fileName)
 int RecorderWriter::EnsureDirectory(string fileName)
 {
 	size_t pos = 0;
+	// if the path includes Windows drive letter, skip it, it's not a directory
+	if (fileName.length() > 1 && fileName[1] == ':')
+		pos = 3;
+	// look for directory separator chars
 	while ((pos = fileName.find_first_of("\\/", pos)) != string::npos)
 	{
 		// get one directory from the path
