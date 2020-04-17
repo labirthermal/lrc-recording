@@ -155,17 +155,30 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DateTime.h" />
+    <ClInclude Include="ExternalDevice.h" />
     <ClInclude Include="LRCErrorCodes.h" />
     <ClInclude Include="include\dirent.h" />
+    <ClInclude Include="LRCCommon.h" />
+    <ClInclude Include="LRCReader.h" />
     <ClInclude Include="LRCWriter.h" />
+    <ClInclude Include="OfflineSource.h" />
+    <ClInclude Include="PlayableSource.h" />
     <ClInclude Include="RecorderWriter.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="TemperatureSource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataStructures.h" />
+    <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="ExternalDevice.cpp" />
+    <ClCompile Include="LRCCommon.cpp" />
+    <ClCompile Include="LRCReader.cpp" />
     <ClCompile Include="LRCWriter.cpp" />
+    <ClCompile Include="PlayableSource.cpp" />
     <ClCompile Include="RecorderWriter.cpp" />
+    <ClCompile Include="TemperatureSource.cpp" />
     <ClCompile Include="Test.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

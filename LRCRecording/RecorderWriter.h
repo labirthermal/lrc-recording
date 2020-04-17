@@ -5,14 +5,14 @@
 
 #include "LRCErrorCodes.h"
 #include "DataStructures.h"
+#include "DateTime.h"
 
 using namespace std;
 
 /// <summary>
 /// Writes temperature data to a file.
 /// </summary>
-/// <typeparam name="T">The temperature data type.</typeparam>
-template <typename T> class RecorderWriter
+class RecorderWriter
 {
 public:
 	/// <summary>
@@ -20,24 +20,25 @@ public:
 	/// </summary>
 	enum RecordingSuffix { None, Number, Timestamp };
 
-protected:
+private:
 	/// <summary>
 	/// The maximal allowed file size.
 	/// </summary>
-	const long MaxFileSize =  1024 * 1024 * 1024;	// 1 GB
+	long maxFileSize =  1024 * 1024 * 1024;	// 1 GB
 
 	/// <summary>
 	/// Indicates whether to split large files.
 	/// </summary>
 	bool doSplitLargeFiles = true;
 
+protected:
 	/// <summary>
 	/// The output file stream.
 	/// </summary>
 	ofstream fileOut;
 
 	/// <summary>
-	/// The actual recording file name, possibly with number or timestamp.
+	/// The actual recording file name, possibly with number or time stamp.
 	/// </summary>
 	string actualFileName = "";
 
@@ -63,7 +64,7 @@ protected:
 
 private:
 	/// <summary>
-	/// The time when the recording started. Measured in milliseconds since 1.1.1970.
+	/// The time when the recording started. Measured as UTC in milliseconds since 1.1.1970.
 	/// </summary>
 	uint64_t recordingStartTime = 0;
 
@@ -112,7 +113,7 @@ private:
 	const string FileNumberFormat = FileNumberSeparator + "%03d";
 
 	/// <summary>
-	/// The format of the timestamp appended to the file name, including the initial separator.
+	/// The format of the time stamp appended to the file name, including the initial separator.
 	/// </summary>
 	const string TimestampFormat = " %Y-%m-%d %H-%M-%S";
 
@@ -137,11 +138,12 @@ public:
 	/// Records a single frame.
 	/// </summary>
 	/// <param name="data">The frame data.</param>
+	/// <param name="dataType">The frame data type.</param>
 	/// <param name="width">The frame width.</param>
 	/// <param name="height">The frame height.</param>
 	/// <param name="fileName">The recording file name.</param>
 	/// <returns>Returns an error code.</returns>
-	int RecordSingleFrame(T* data, int width, int height, string fileName);
+	int RecordSingleFrame(void* data, FrameDataType dataType, int width, int height, string fileName);
 
 	/// <summary>
 	/// Opens a file for manual recording.
@@ -161,12 +163,13 @@ public:
 	/// Use this method if writing whole new frame of completely rewriting existing frame (including header).
 	/// </summary>
 	/// <param name="data">Frame data.</param>
+	/// <param name="dataType">The frame data type.</param>
 	/// <param name="streamId">Stream ID.</param>
 	/// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 	/// <param name="range">Range of data values. If null, the range will be calculated.</param>
-	/// <param name="frameTimestamp">Frame timestamp in milliseconds since 1.1.1970.</param>
+	/// <param name="frameTimestamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <returns>Returns an error code.</returns>
-	int RecordFrame(T* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
+	int RecordFrame(void* data, FrameDataType dataType, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
 
 	/// <summary>
 	/// Closes the file being recorded.
@@ -188,11 +191,13 @@ protected:
 	///	Consider this if there are multiple streams.
 	/// </remarks>
 	/// <param name="data">Data array of frame.</param>
+	/// <param name="dataType">The frame data type.</param>
 	/// <param name="streamId">Id of stream that will be written.</param>
 	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
-	/// <param name="dateTime">Frame timestamp in milliseconds since 1.1.1970.</param>
-	virtual void WriteFrame(T* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
+	/// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
+	/// <returns>Returns an error code.</returns>
+	virtual int WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
 
 	/// <summary>
 	/// Size of file header in bytes.
@@ -218,6 +223,18 @@ public:
 	/// Gets the maximum frame height.
 	/// </summary>
 	int GetHeight() { return height; }
+
+	/// <summary>
+	/// Gets or sets the maximum recording file size before splitting into multiple files.
+	/// </summary>
+	long GetMaxFileSize() { return maxFileSize; }
+	void SetMaxFileSize(long value) { maxFileSize = value; }
+
+	/// <summary>
+	/// Gets or sets whether to split large recordings into multiple files.
+	/// </summary>
+	bool GetDoSplitLargeFiles() { return doSplitLargeFiles; }
+	void SetDoSplitLargeFiles(bool value) { doSplitLargeFiles = value; }
 
 	/// <summary>
 	/// Tells whether a number should be appended to the output file name
@@ -281,21 +298,15 @@ private:
 	string AppendNumberToFileName(string fileName);
 
 	/// <summary>
-	/// Appends the current timestamp to the file name.
+	/// Appends the current time stamp to the file name.
 	/// </summary>
 	/// <param name="fileName">The base file name.</param>
-	/// <returns>Returns the file name with the timestamp.</returns>
+	/// <returns>Returns the file name with the time stamp.</returns>
 	string AppendTimestampToFileName(string fileName);
 
 #pragma endregion
 
 protected:
-	/// <summary>
-	/// Gets the current local time in milliseconds since 1.1.1970.
-	/// </summary>
-	/// <returns>Returns the current local time in milliseconds.</returns>
-	uint64_t GetTimeMs();
-
 	/// <summary>
 	/// Determines whether a file exists.
 	/// </summary>
@@ -334,20 +345,19 @@ private:
 
 protected:
 	/// <summary>
-	/// Finds the range of the data.
+	/// Updates the range of the data.
 	/// </summary>
 	/// <param name="data">The data.</param>
 	/// <param name="length">The length of data.</param>
-	/// <param name="range">The range to store the result.</param>
-	static void FindDataRange(const T* data, int length, Range* range);
-
+	/// <param name="range">The range to update.</param>
+	static void UpdateDataRange(const float* data, int length, Range* range);
 	/// <summary>
 	/// Updates the range of the data.
 	/// </summary>
 	/// <param name="data">The data.</param>
 	/// <param name="length">The length of data.</param>
 	/// <param name="range">The range to update.</param>
-	static void UpdateDataRange(const T* data, int length, Range* range);
+	static void UpdateDataRange(const uint16_t* data, int length, Range* range);
 
 private:
 	/// <summary>

@@ -40,3 +40,27 @@
 
 // Too many external devices provided for LRC Writer
 #define LRC_ERR_TOO_MANY_DEVICES	10
+
+// PlayableSource does not support stepping back
+#define LRC_ERR_CANNOT_STEP_BACK	11
+
+// PlayableSource does not support seeking
+#define LRC_ERR_CANNOT_SEEK		12
+
+// Frame index is out of range
+#define LRC_ERR_FRAME_INDEX_OUT	13
+
+// Cannot determine LRC file size
+#define LRC_ERR_DET_FILE_SIZE	14
+
+// Unknown recording file signature
+#define LRC_ERR_FILE_SIGNATURE	15
+
+// Unsupported LRC file version
+#define LRC_ERR_FILE_VERSION	16
+
+// Optional data in LRC header are not supported
+#define LRC_ERR_OPTIONAL_DATA	17
+
+// Unknown or incompatible frame data type
+#define LRC_ERR_FRAME_DATA_TYPE	18

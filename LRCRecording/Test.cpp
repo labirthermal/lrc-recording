@@ -4,14 +4,15 @@
 
 #include "stdafx.h"
 #include "LRCWriter.h"
+#include "LRCReader.h"
 
 const int Width = 160;
 const int Height = 120;
 const string FileName = "recording.lrc";
 
 // the data type to test
-typedef float TData;
-//typedef uint16_t TData;
+#define DATA_TYPE_FLOAT
+//#define DATA_TYPE_UINT16
 
 
 /// <summary>
@@ -60,23 +61,38 @@ void GenerateData(uint16_t* buff, int count)
 void RecordImage()
 {
 	// create the stream info
-	StreamInfo stream;
-	stream.dataType = StreamInfo::FileDataType::UInt16;	// output type
-	stream.units = StreamInfo::TemperatureSourceUnits::Celsius;
+	LRCCommon::StreamInfo stream;
+	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
 	stream.objectParams = ObjectParameters();
 
 	// generate some data
-	TData data[Width * Height];
+#ifdef DATA_TYPE_FLOAT
+	// temperatures in degrees Celsius
+	stream.units = TemperatureSourceUnits::Celsius;
+	// temperatures stored as float
+	FrameDataType dataType = FrameDataType::Float;
+	// generate data
+	float data[Width * Height];
 	GenerateData(data, Width * Height);
+#endif
+#ifdef DATA_TYPE_UINT16
+	// raw intensities
+	stream.units = TemperatureSourceUnits::Intensity;
+	// intensities stored as uint16
+	FrameDataType dataType = FrameDataType::UInt16;
+	// generate data
+	uint16_t data[Width * Height];
+	GenerateData(data, Width * Height);
+#endif
 
 	// create the writer
-	LRCWriter<TData> writer(&stream, 1, NULL, 0);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::None);
-	writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Number);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
+	LRCWriter writer(&stream, 1, NULL, 0);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::None);
+	writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Number);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
 
 	// record one image
-	int err = writer.RecordSingleFrame(data, Width, Height, FileName);
+	int err = writer.RecordSingleFrame(data, dataType, Width, Height, FileName);
 	if (LRC_FAILED(err))
 		printf("Recording image failed with error %d.", err);
 }
@@ -84,31 +100,50 @@ void RecordImage()
 /// <summary>
 /// Records several images as a sequence.
 /// </summary>
-void RecordSequence()
+/// <returns>Returns the name of the recorded file.</returns>
+string RecordSequence()
 {
 	int err;
 
 	// create the stream info
-	StreamInfo stream;
-	stream.dataType = StreamInfo::FileDataType::UInt16;	// output type
-	stream.units = StreamInfo::TemperatureSourceUnits::Celsius;
+	LRCCommon::StreamInfo stream;
+	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
 	stream.objectParams = ObjectParameters();
 
 	// create buffer for data
-	TData data[Width * Height];
+#ifdef DATA_TYPE_FLOAT
+	// temperatures in degrees Celsius
+	stream.units = TemperatureSourceUnits::Celsius;
+	// temperatures stored as float
+	FrameDataType dataType = FrameDataType::Float;
+	float data[Width * Height];
+#endif
+#ifdef DATA_TYPE_UINT16
+	// raw intensities
+	stream.units = TemperatureSourceUnits::Intensity;
+	// intensities stored as uint16
+	FrameDataType dataType = FrameDataType::UInt16;
+	uint16_t data[Width * Height];
+#endif
+
+	// create an external device
+	BasicExternalDevice* extDevices[1];
+	extDevices[0] = new BasicExternalDevice(u8"Test device", 4);
+	char extDevData[4] { 0, 10, 20, 30 };
+	extDevices[0]->SetBinaryData(extDevData);
 
 	// create the writer
-	LRCWriter<TData> writer(&stream, 1, NULL, 0);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::None);
-	writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Number);
-	//writer.SetRecordingSuffix(RecorderWriter<TData>::RecordingSuffix::Timestamp);
+	LRCWriter writer(&stream, 1, (IExternalDevice**)extDevices, 1);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::None);
+	writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Number);
+	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
 
 	// start recording
 	err = writer.StartRecordingManually(FileName, Width, Height);
 	if (LRC_FAILED(err))
 	{
 		printf("Recording sequence failed with error code %d.", err);
-		return;
+		return "";
 	}
 
 	// record several frames
@@ -116,22 +151,41 @@ void RecordSequence()
 	{
 		// generate some data
 		GenerateData(data, Width * Height);
+		// modify external device data
+		extDevData[0]++;
+		extDevices[0]->SetBinaryData(extDevData);
 		
 		// record a frame
-		err = writer.RecordFrame(data);
+		err = writer.RecordFrame(data, dataType);
 		if (LRC_FAILED(err))
 		{
 			printf("Recording frame failed with error code %d.", err);
 			writer.Close();
-			return;
+			return "";
 		}
 
 		// wait before the next frame
 		Sleep(200);
 	}
 
+	// get the recording file name
+	string recordingName = writer.GetActualFileName();
+
 	// finish recording
 	writer.Close();
+
+	return recordingName;
+}
+
+/// <summary>
+/// Called when the reader reads a new frame.
+/// </summary>
+/// <param name="data">Frame data.</param>
+/// <param name="range">Frame data range.</param>
+/// <param name="timeStamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
+void NewFrameCallback(float* data, Range* range, uint64_t timeStamp)
+{
+	printf("Frame read: min %f, max %f\n", range->min, range->max);
 }
 
 /// <summary>
@@ -140,9 +194,29 @@ void RecordSequence()
 /// </summary>
 int main()
 {
+	// save an image
+	printf("Saving image...\n");
 	RecordImage();
 
-	RecordSequence();
+	// record a sequence
+	printf("Recording sequence...\n");
+	string recordingName = RecordSequence();
+
+	// open the recorded sequence
+	printf("Opening recorded sequence...\n");
+	LRCReader reader(recordingName);
+	// register callback for processing frames
+	reader.RegisterNewDataCallback(&NewFrameCallback);
+	// start playback
+	reader.Play();
+	// wait for playback to finish
+	while (reader.IsPlaying())
+		Sleep(100);
+	// finished
+	printf("Sequence playback finished.\n");
+
+	// manual playback: reader.NextFrame and reader.GetNextFrameTimeStamp
+	// access current frame data: reader.GetTemperatureData, reader.GetDataRange, reader.GetFrameTimeStamp
 
     return 0;
 }

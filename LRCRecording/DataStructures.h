@@ -5,6 +5,22 @@
 
 #include "stdafx.h"
 
+using namespace std;
+
+/// <summary>
+/// Types of units for writing temperatures to file.
+/// </summary>
+enum TemperatureSourceUnits { None, Intensity, Celsius, Kelvin, Time, Radians };
+
+
+
+/// <summary>
+/// Frame data types. This is the input data type. The recorder may save it to a file as a different type according to its settings.
+/// </summary>
+enum FrameDataType { Float, UInt16 };
+
+
+
 /// <summary>
 /// Rectangle with integer coordinates.
 /// </summary>
@@ -56,7 +72,7 @@ struct Range
 	/// <summary>
 	/// The range bounds.
 	/// </summary>
-	float min, max;
+	double min, max;
 
 	/// <summary>
 	/// Initialises an empty range.
@@ -71,8 +87,8 @@ struct Range
 	/// </summary>
 	void ResetActualRange()
 	{
-		min = FLT_MAX;
-		max = -FLT_MAX;
+		min = DBL_MAX;
+		max = -DBL_MAX;
 	}
 
 	/// <summary>
@@ -88,7 +104,7 @@ struct Range
 	/// Extends the range to include the given value.
 	/// </summary>
 	/// <param name="value">The value to include in the range.</param>
-	void IncludeValue(float value)
+	void IncludeValue(double value)
 	{
 		if (value < min)
 			min = value;
@@ -100,7 +116,7 @@ struct Range
 	/// Gets the range length, i.e., max - min;
 	/// </summary>
 	/// <returns>Returns the range length.</returns>
-	float GetLength()
+	double GetLength()
 	{
 		return max - min;
 	}
@@ -241,48 +257,20 @@ struct ObjectParameters
 
 
 /// <summary>
-/// Struct that holds info about LRC stream.
-/// Contains TemperatureSource it's data type and units.
+/// Camera parameters.
 /// </summary>
-struct StreamInfo
+struct CameraParameters
 {
 	/// <summary>
-	/// Data type for writing temperatures to file.
+	/// The camera resolution.
 	/// </summary>
-	enum FileDataType { UInt16, Float };
+	uint16_t width, height;
 
 	/// <summary>
-	/// Types of units for writing temperatures to file.
+	/// Initialises the camera parameters.
 	/// </summary>
-	enum TemperatureSourceUnits { None, Intensity, Celsius, Kelvin, Time, Radians };
-
-
-
-	/// <summary>
-	/// Units of temperature.
-	/// </summary>
-	TemperatureSourceUnits units;
-
-	/// <summary>
-	/// Object parameters of this stream.
-	/// </summary>
-	ObjectParameters objectParams;
-
-	/// <summary>
-	/// File data type of this stream.
-	/// </summary>
-	FileDataType dataType;
-};
-
-
-
-/// <summary>
-/// External device providing additional data to recorded frames.
-/// </summary>
-class IExternalDevice
-{
-public:
-	virtual std::string GetName() = 0;
-
-	virtual uint16_t GetCurrentValue() = 0;
+	CameraParameters()
+	{
+		width = height = 0;
+	}
 };
