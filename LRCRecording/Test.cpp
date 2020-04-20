@@ -6,8 +6,8 @@
 #include "LRCWriter.h"
 #include "LRCReader.h"
 
-const int Width = 160;
-const int Height = 120;
+const uint16_t Width = 160;
+const uint16_t Height = 120;
 const string FileName = "recording.lrc";
 
 // the data type to test
@@ -94,7 +94,7 @@ void RecordImage()
 	// record one image
 	int err = writer.RecordSingleFrame(data, dataType, Width, Height, FileName);
 	if (LRC_FAILED(err))
-		printf("Recording image failed with error %d.", err);
+		printf("Recording image failed with error %d.\n", err);
 }
 
 /// <summary>
@@ -142,7 +142,7 @@ string RecordSequence()
 	err = writer.StartRecordingManually(FileName, Width, Height);
 	if (LRC_FAILED(err))
 	{
-		printf("Recording sequence failed with error code %d.", err);
+		printf("Recording sequence failed with error code %d.\n", err);
 		return "";
 	}
 
@@ -159,7 +159,7 @@ string RecordSequence()
 		err = writer.RecordFrame(data, dataType);
 		if (LRC_FAILED(err))
 		{
-			printf("Recording frame failed with error code %d.", err);
+			printf("Recording frame failed with error code %d.\n", err);
 			writer.Close();
 			return "";
 		}
@@ -202,6 +202,13 @@ int main()
 	// record a sequence
 	printf("Recording sequence...\n");
 	string recordingName = RecordSequence();
+
+	// if the recording name is empty, no sequence was recorded
+	if (recordingName.empty())
+	{
+		printf("No sequence recorded.\n");
+		return 1;
+	}
 
 	// open the recorded sequence
 	printf("Opening recorded sequence...\n");

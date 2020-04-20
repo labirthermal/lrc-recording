@@ -160,12 +160,6 @@ struct ObjectParameters
 	float tau;
 
 	/// <summary>
-	/// Tells whether the tau parameter is set.
-	/// If not, it is computed from the atmosphere parameters.
-	/// </summary>
-	bool isTauSet;
-
-	/// <summary>
 	/// Window temperature in Kelvin.
 	/// </summary>
 	float windowTempK;
@@ -174,6 +168,12 @@ struct ObjectParameters
 	/// Window transmissivity.
 	/// </summary>
 	float windowTransmiss;
+
+	/// <summary>
+	/// Tells whether the tau parameter is set.
+	/// If not, it is computed from the atmosphere parameters.
+	/// </summary>
+	bool isTauSet;
 
 #pragma region Tau calculation constants
 

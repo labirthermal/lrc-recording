@@ -177,41 +177,47 @@ private:
 	/// <summary>
 	/// Writes file header into currently open file.
 	/// </summary>
-	void WriteFileHeader();
+	/// <returns>Returns an error code.</returns>
+	int WriteFileHeader();
 
 	/// <summary>
 	/// Writes frame header into currently open file.
 	/// </summary>
 	/// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <param name="note">Note for this frame.</param>
-	void WriteFrameHeader(uint64_t dateTime, string note);
+	/// <returns>Returns an error code.</returns>
+	int WriteFrameHeader(uint64_t dateTime, string note);
 
 	/// <summary>
 	/// Writes an external device into currently open file.
 	/// </summary>
 	/// <param name="devID">The device ID.</param>
 	/// <param name="dev">The external device.</param>
-	void WriteExternalDevice(uint8_t devID, IExternalDevice* dev);
+	/// <returns>Returns an error code.</returns>
+	int WriteExternalDevice(uint8_t devID, IExternalDevice* dev);
 
 	/// <summary>
 	/// Writes stream header into currently open file.
 	/// </summary>
 	/// <param name="dataRange">Range of frame data.</param>
-	void WriteStreamHeader(uint8_t streamId, Range dataRange);
+	/// <returns>Returns an error code.</returns>
+	int WriteStreamHeader(uint8_t streamId, Range dataRange);
 
 	/// <summary>
 	/// Writes float temperature data to the file.
 	/// </summary>
 	/// <param name="data">The temperature data (in degrees Celsius) to write.</param>
 	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
-	void WriteFrameData(float* data, Int32Rect dataRect, Range dataRange);
+	/// <returns>Returns an error code.</returns>
+	int WriteFrameData(float* data, Int32Rect dataRect, Range dataRange);
 
 	/// <summary>
 	/// Writes uint16 raw data to the file.
 	/// </summary>
 	/// <param name="data">The temperature data (type uint16) to write.</param>
 	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
-	void WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange);
+	/// <returns>Returns an error code.</returns>
+	int WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange);
 
 #pragma endregion
 	

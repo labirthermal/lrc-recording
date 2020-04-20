@@ -55,12 +55,19 @@ LRCWriter::~LRCWriter()
 /// <returns>Returns an error code.</returns>
 int LRCWriter::OpenFileWithSuffix(string fileName)
 {
-	int err = RecorderWriter::OpenFileWithSuffix(fileName);
-	if (err != LRC_ERR_SUCCESS)
+	int err;
+	
+	// open the file
+	err = RecorderWriter::OpenFileWithSuffix(fileName);
+	if (LRC_FAILED(err))
 		return err;
 
-	WriteFileHeader();
+	// write file header
+	err = WriteFileHeader();
+	if (LRC_FAILED(err))
+		return err;
 
+	// calculate header and stream sizes
 	CalculateSizes();
 
 	return LRC_ERR_SUCCESS;
@@ -72,7 +79,7 @@ int LRCWriter::OpenFileWithSuffix(string fileName)
 void LRCWriter::CalculateSizes()
 {
 	// get file header size from stream position
-	fileHeaderSize = fileOut.tellp();
+	fileHeaderSize = (long)fileOut.tellp();
 
 	// calculate frame header size
 	frameHeaderSize = sizeof(uint64_t);	// frame datetime
@@ -123,8 +130,13 @@ void LRCWriter::CalculateSizes()
 /// <returns>Returns an error code.</returns>
 int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime)
 {
+	int err;
+
 	// overwrite frame header
-	WriteFrameHeader(dateTime, nextFrameNote);
+	err = WriteFrameHeader(dateTime, nextFrameNote);
+	if (LRC_FAILED(err))
+		return err;
+	// note was written in the frame header
 	nextFrameNote = "";
 
 	// seek to correct stream, write dummy stream headers
@@ -133,7 +145,9 @@ int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, 
 	for (i = 0; i < streamId; i++)
 	{
 		// write dummy header
-		WriteStreamHeader(i, defaultRange);
+		err = WriteStreamHeader(i, defaultRange);
+		if (LRC_FAILED(err))
+			return err;
 
 		// skip data part of stream
 		fileOut.seekp(streamSizes[i] - streamHeaderSizes[i], ofstream::cur);
@@ -148,28 +162,35 @@ int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, 
 	}
 
 	// overwrite stream header
-	WriteStreamHeader(streamId, dataRange);
+	err = WriteStreamHeader(streamId, dataRange);
+	if (LRC_FAILED(err))
+		return err;
 
 	// overwrite stream data
 	switch (dataType)
 	{
 	case FrameDataType::Float:
-		WriteFrameData((float*)data, rect, dataRange);
+		err = WriteFrameData((float*)data, rect, dataRange);
 		break;
 
 	case FrameDataType::UInt16:
-		WriteFrameData((uint16_t*)data, rect, dataRange);
+		err = WriteFrameData((uint16_t*)data, rect, dataRange);
 		break;
 
 	default:
-		return LRC_ERR_FRAME_DATA_TYPE;
+		err = LRC_ERR_FRAME_DATA_TYPE;
+		break;
 	}
+	if (LRC_FAILED(err))
+		return err;
 
 	// seek to next frame (WriteFrame expects stream position at start of next frame)
 	for (i++; i < streamCount; i++)
 	{
 		// write dummy header
-		WriteStreamHeader(i, defaultRange);
+		err = WriteStreamHeader(i, defaultRange);
+		if (LRC_FAILED(err))
+			return err;
 
 		// skip data part of stream
 		fileOut.seekp(streamSizes[i] - streamHeaderSizes[i], ofstream::cur);
@@ -178,7 +199,9 @@ int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, 
 		{
 			// reserve space for data (for later updating)
 			fileOut.seekp(-1, ofstream::cur);
-			WriteZeros(1);
+			fileOut.put(0);
+			if (fileOut.fail())
+				return LRC_ERR_FILE_WRITE;
 		}
 	}
 
@@ -190,55 +213,77 @@ int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, 
 /// <summary>
 /// Writes file header into currently open file.
 /// </summary>
-void LRCWriter::WriteFileHeader()
+/// <returns>Returns an error code.</returns>
+int LRCWriter::WriteFileHeader()
 {
 	// static part of file header
 	fileOut.write(LRCCommon::FileTypeHeader, 4 * sizeof(char));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	// LRC version
 	fileOut.write((char*)&LRCVersion, sizeof(uint8_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	// recording start time stamp
 	int64_t nowBin = DateTime::TimeToBinary(DateTime::Now());
 	fileOut.write((char*)&nowBin, sizeof(int64_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	// external devices
 	fileOut.write((char*)&extDevCount, sizeof(uint8_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 	for (uint8_t i = 0; i < extDevCount; i++)
 	{
 		// device ID
 		fileOut.write((char*)&i, sizeof(uint8_t));
+		if (fileOut.fail())
+			return LRC_ERR_FILE_WRITE;
 		// device name
 		string name = externalDevices[i]->GetName();
 		char length = name.length();
 		fileOut.write(&length, sizeof(char));
+		if (fileOut.fail())
+			return LRC_ERR_FILE_WRITE;
 		fileOut.write(name.c_str(), length);	// should be UTF-8
+		if (fileOut.fail())
+			return LRC_ERR_FILE_WRITE;
 		// device data size
 		uint16_t dataSize = externalDevices[i]->GetDataSize();
 		fileOut.write((char*)&dataSize, sizeof(uint16_t));
+		if (fileOut.fail())
+			return LRC_ERR_FILE_WRITE;
 	}
 
 	// number of streams in this file
 	fileOut.write((char*)&streamCount, sizeof(uint8_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 	for (int i = 0; i < streamCount; i++)
 	{
-		// write stream data type
-		uint8_t dataType = streams[i].dataType;
-		fileOut.write((char*)&dataType, sizeof(uint8_t));
-		// write stream units
-		uint8_t units = streams[i].units;
-		fileOut.write((char*)&units, sizeof(uint8_t));
+		// write stream data type and units
+		uint8_t typeUnits[2] { (uint8_t)streams[i].dataType, (uint8_t)streams[i].units };
+		fileOut.write((char*)&typeUnits, sizeof(typeUnits));
+		if (fileOut.fail())
+			return LRC_ERR_FILE_WRITE;
 	}
 
 	// write resolution
-	fileOut.write((char*)&width, sizeof(uint16_t));
-	fileOut.write((char*)&height, sizeof(uint16_t));
+	uint16_t res[2] { width, height };
+	fileOut.write((char*)&res, sizeof(res));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 	// header flags
 	//FileHeaderInfoFlags flags = FileHeaderInfoFlags.None;
 	//foreach(var value in DynamicHeaderInfo.Keys)
 	//	flags |= value.ToFlag();
 	uint32_t flags = 0;
 	fileOut.write((char*)&flags, sizeof(uint32_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	//// dynamic part of header
 	//foreach(var pair in DynamicHeaderInfo)
@@ -252,6 +297,10 @@ void LRCWriter::WriteFileHeader()
 	//	else
 	//		throw new NotSupportedException("Dynamic header flag " + pair.Key + " is not supported.");
 	//}
+	//if (fileOut.fail())
+	//	return LRC_ERR_FILE_WRITE;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -259,17 +308,26 @@ void LRCWriter::WriteFileHeader()
 /// </summary>
 /// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 /// <param name="note">Note for this frame.</param>
-void LRCWriter::WriteFrameHeader(uint64_t dateTime, string note)
+/// <returns>Returns an error code.</returns>
+int LRCWriter::WriteFrameHeader(uint64_t dateTime, string note)
 {
 	// frame time stamp
 	int64_t nowBin = DateTime::TimeToBinary(dateTime);
 	fileOut.write((char*)&nowBin, sizeof(int64_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 	//if (DynamicHeaderInfo.ContainsKey(FileHeaderInfo.FrameNoteLength) && Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]) > 0)
 	//	WriteString(note ? ? string.Empty, Convert.ToUInt16(DynamicHeaderInfo[FileHeaderInfo.FrameNoteLength]));// write frame note if present
 
 	// write external device values
 	for (int i = 0; i < extDevCount; i++)
-		WriteExternalDevice(i, externalDevices[i]);
+	{
+		int err = WriteExternalDevice(i, externalDevices[i]);
+		if (LRC_FAILED(err))
+			return err;
+	}
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -277,46 +335,49 @@ void LRCWriter::WriteFrameHeader(uint64_t dateTime, string note)
 /// </summary>
 /// <param name="devID">The device ID.</param>
 /// <param name="dev">The external device.</param>
-void LRCWriter::WriteExternalDevice(uint8_t devID, IExternalDevice* dev)
+/// <returns>Returns an error code.</returns>
+int LRCWriter::WriteExternalDevice(uint8_t devID, IExternalDevice* dev)
 {
 	// write the device ID
 	fileOut.write((char*)&devID, sizeof(uint8_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	// write the device data
 	fileOut.write(dev->GetBinaryData(), dev->GetDataSize());
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Writes stream header into currently open file.
 /// </summary>
 /// <param name="dataRange">Range of frame data.</param>
-void LRCWriter::WriteStreamHeader(uint8_t streamId, Range dataRange)
+/// <returns>Returns an error code.</returns>
+int LRCWriter::WriteStreamHeader(uint8_t streamId, Range dataRange)
 {
-	// write data temp range
-	float dataRangeMin = (float)dataRange.min;
-	float dataRangeMax = (float)dataRange.max;
-	fileOut.write((char*)&dataRangeMin, sizeof(float));
-	fileOut.write((char*)&dataRangeMax, sizeof(float));
+	// write data temperature range
+	float dr[2] { (float)dataRange.min, (float)dataRange.max };
+	fileOut.write((char*)&dr, sizeof(dr));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
-	// write camera temp range
-	//float camRangeMin = cameraParams.TempRangeMinK;
-	//float camRangeMax = cameraParams.TempRangeMaxK;
-	float camRangeMin = 0;
-	float camRangeMax = 100;
-	fileOut.write((char*)&camRangeMin, sizeof(float));
-	fileOut.write((char*)&camRangeMax, sizeof(float));
+	// write camera temperature range
+	//float cr[2] { cameraParams.TempRangeMinK, cameraParams.TempRangeMaxK };
+	float cr[2] { 0, 100 };
+	fileOut.write((char*)&cr, sizeof(cr));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	// write object parameters
 	ObjectParameters* objectParams = &streams[streamId].objectParams;
-	fileOut.write((char*)&objectParams->emissivity, sizeof(float));
-	fileOut.write((char*)&objectParams->reflectedTempK, sizeof(float));
-	fileOut.write((char*)&objectParams->distance, sizeof(float));
-	fileOut.write((char*)&objectParams->atmosphericTempK, sizeof(float));
-	fileOut.write((char*)&objectParams->relHumidity, sizeof(float));
-	fileOut.write((char*)&objectParams->tau, sizeof(float));
-	fileOut.write((char*)&objectParams->windowTempK, sizeof(float));
-	fileOut.write((char*)&objectParams->windowTransmiss, sizeof(float));
-	fileOut.write((char*)&objectParams->isTauSet, sizeof(bool));
+	fileOut.write((char*)objectParams, 8 * sizeof(float) + sizeof(bool));	// do not use sizeof(ObjectParameters), there are some additional constants
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -324,18 +385,26 @@ void LRCWriter::WriteStreamHeader(uint8_t streamId, Range dataRange)
 /// </summary>
 /// <param name="data">The temperature data (type float) to write.</param>
 /// <param name="dataRect">Rectangle where to write this temperature array.</param>
-void LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
+/// <returns>Returns an error code.</returns>
+int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 {
+	int err;
+
+	// get the size of one data element
 	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
 
 	// write rows before rect
-	WriteZeros(valueSize * width * dataRect.y);
+	err = WriteZeros(valueSize * width * dataRect.y);
+	if (LRC_FAILED(err))
+		return err;
 
 	double dataRangeLength = dataRange.GetLength();
 	for (int i = 0; i < dataRect.height; i++)
 	{
 		// write columns before rect
-		WriteZeros(valueSize * dataRect.x);
+		err = WriteZeros(valueSize * dataRect.x);
+		if (LRC_FAILED(err))
+			return err;
 
 		// write data inside rect
 		switch (streams[0].dataType)
@@ -348,6 +417,8 @@ void LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 				if (dataRangeLength > 0)
 					u = (uint16_t)((*data - dataRange.min) / dataRangeLength * UINT16_MAX);
 				fileOut.write((char*)&u, sizeof(uint16_t));
+				if (fileOut.fail())
+					return LRC_ERR_FILE_WRITE;
 				data++;
 			}
 			break;
@@ -355,16 +426,24 @@ void LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 		case LRCCommon::FileDataType::Float:
 			// float saved as float
 			fileOut.write((char*)data, dataRect.width * sizeof(float));
+			if (fileOut.fail())
+				return LRC_ERR_FILE_WRITE;
 			data += dataRect.width;
 			break;
 		}
 
 		// write columns after rect
-		WriteZeros(valueSize * (width - dataRect.width - dataRect.x));
+		err = WriteZeros(valueSize * (width - dataRect.width - dataRect.x));
+		if (LRC_FAILED(err))
+			return err;
 	}
 
 	// write rows after rect
-	WriteZeros(valueSize * width * (height - dataRect.height - dataRect.y));
+	err = WriteZeros(valueSize * width * (height - dataRect.height - dataRect.y));
+	if (LRC_FAILED(err))
+		return err;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -372,17 +451,25 @@ void LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 /// </summary>
 /// <param name="data">The temperature data (type uint16) to write.</param>
 /// <param name="dataRect">Rectangle where to write this temperature array.</param>
-void LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange)
+/// <returns>Returns an error code.</returns>
+int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange)
 {
+	int err;
+
+	// get the size of one data element
 	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
 
 	// write rows before rect
-	WriteZeros(valueSize * width * dataRect.y);
+	err = WriteZeros(valueSize * width * dataRect.y);
+	if (LRC_FAILED(err))
+		return err;
 
 	for (int i = 0; i < dataRect.height; i++)
 	{
 		// write columns before rect
-		WriteZeros(valueSize * dataRect.x);
+		err = WriteZeros(valueSize * dataRect.x);
+		if (LRC_FAILED(err))
+			return err;
 
 		// write data inside rect
 		switch (streams[0].dataType)
@@ -390,6 +477,8 @@ void LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRan
 		case LRCCommon::FileDataType::UInt16:
 			// uint16 saved as uint16 (without any range stretching)
 			fileOut.write((char*)data, dataRect.width * sizeof(uint16_t));
+			if (fileOut.fail())
+				return LRC_ERR_FILE_WRITE;
 			data += dataRect.width;
 			break;
 
@@ -399,17 +488,25 @@ void LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRan
 				// uint16 saved as float (doesn't make much sense, but make it possible)
 				float f = *data;
 				fileOut.write((char*)&f, sizeof(float));
+				if (fileOut.fail())
+					return LRC_ERR_FILE_WRITE;
 				data++;
 			}
 			break;
 		}
 
 		// write columns after rect
-		WriteZeros(valueSize * (width - dataRect.width - dataRect.x));
+		err = WriteZeros(valueSize * (width - dataRect.width - dataRect.x));
+		if (LRC_FAILED(err))
+			return err;
 	}
 
 	// write rows after rect
-	WriteZeros(valueSize * width * (height - dataRect.height - dataRect.y));
+	err = WriteZeros(valueSize * width * (height - dataRect.height - dataRect.y));
+	if (LRC_FAILED(err))
+		return err;
+
+	return LRC_ERR_SUCCESS;
 }
 
 #pragma endregion

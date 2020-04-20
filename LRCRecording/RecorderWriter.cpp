@@ -30,7 +30,7 @@ RecorderWriter::~RecorderWriter()
 /// <param name="height">The frame height.</param>
 /// <param name="fileName">The recording file name.</param>
 /// <returns>Returns an error code.</returns>
-int RecorderWriter::RecordSingleFrame(void* data, FrameDataType dataType, int width, int height, string fileName)
+int RecorderWriter::RecordSingleFrame(void* data, FrameDataType dataType, uint16_t width, uint16_t height, string fileName)
 {
 	int err;
 
@@ -61,7 +61,7 @@ int RecorderWriter::RecordSingleFrame(void* data, FrameDataType dataType, int wi
 /// <param name="width">Width of frames.</param>
 /// <param name="height">Height of frames.</param>
 /// <returns>Returns an error code.</returns>
-int RecorderWriter::StartRecordingManually(string fileName, int width, int height)
+int RecorderWriter::StartRecordingManually(string fileName, uint16_t width, uint16_t height)
 {
 	// check recording is not already running
 	if (fileOut.is_open())
@@ -171,10 +171,9 @@ void RecorderWriter::Close()
 {
 	// close the output file
 	if (fileOut.is_open())
-	{
 		fileOut.close();
-		actualFileName = "";
-	}
+
+	actualFileName = "";
 }
 
 /// <summary>
@@ -422,7 +421,7 @@ int RecorderWriter::EnsureDirectory(string fileName)
 			mode_t mode = 0755;
 			int mdret = mkdir(dir.c_str(), mode);
 #endif
-			// check errors
+			// check errors, if the directory already exists, it's not an error
 			if (mdret && errno != EEXIST)
 				return LRC_ERR_CREATE_DIR;
 		}
@@ -445,6 +444,8 @@ int RecorderWriter::OpenFile(string fileName)
 
 	// open the output file and its reader/writer
 	fileOut.open(fileName, ofstream::binary);
+	if (fileOut.fail())
+		return LRC_ERR_FILE_OPEN;
 	actualFileName = fileName;
 
 	return LRC_ERR_SUCCESS;
@@ -537,7 +538,7 @@ void RecorderWriter::UpdateDataRange(const uint16_t* data, int length, Range* ra
 /// <param name="dataHeight">Data height.</param>
 /// <param name="rect">Rect where data will be written.</param>
 /// <returns>True if rect fit into frame and data is at least as large as rect. False otherwise.</returns>
-bool RecorderWriter::CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect)
+bool RecorderWriter::CheckRectSize(uint16_t dataWidth, uint16_t dataHeight, Int32Rect rect)
 {
 	return rect.x >= 0	// rect is inside frame
 		&& rect.y >= 0	// rect is inside frame
@@ -554,10 +555,17 @@ bool RecorderWriter::CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect
 /// Writes zeros to the file.
 /// </summary>
 /// <param name="count">The number of bytes to write.</param>
-void RecorderWriter::WriteZeros(int count)
+/// <returns>Returns an error code.</returns>
+int RecorderWriter::WriteZeros(int count)
 {
 	for (int i = 0; i < count; i++)
+	{
 		fileOut.put(0);
+		if (fileOut.fail())
+			return LRC_ERR_FILE_WRITE;
+	}
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -577,11 +585,17 @@ int RecorderWriter::WriteString(string str, int totalLength)
 
 	// write the string
 	fileOut << str;
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
 
 	// write the padding
 	int paddingBytes = totalLength - byteCount;
 	if (paddingBytes > 0)
-		WriteZeros(paddingBytes);
+	{
+		int err = WriteZeros(paddingBytes);
+		if (LRC_FAILED(err))
+			return err;
+	}
 
 	return LRC_ERR_SUCCESS;
 }
@@ -590,22 +604,32 @@ int RecorderWriter::WriteString(string str, int totalLength)
 /// Writes a 2-byte unsigned integer to the file in big endian.
 /// </summary>
 /// <param name="x">The value to write.</param>
-void RecorderWriter::WriteUInt16BE(uint16_t x)
+/// <returns>Returns an error code.</returns>
+int RecorderWriter::WriteUInt16BE(uint16_t x)
 {
-	fileOut.put(x >> 8);
-	fileOut.put(x & 0xFF);
+	char c[2] { x >> 8, x & 0xFF };
+	fileOut.write(c, 2);
+
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Writes a 4-byte unsigned integer to the file in big endian.
 /// </summary>
 /// <param name="x">The value to write.</param>
-void RecorderWriter::WriteUInt32BE(uint32_t x)
+/// <returns>Returns an error code.</returns>
+int RecorderWriter::WriteUInt32BE(uint32_t x)
 {
-	fileOut.put(x >> 24);
-	fileOut.put((x >> 16) & 0xFF);
-	fileOut.put((x >> 8) & 0xFF);
-	fileOut.put(x & 0xFF);
+	char c[4] { x >> 24, (x >> 16) & 0xFF, (x >> 8) & 0xFF, x & 0xFF };
+	fileOut.write(c, 4);
+
+	{if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE; }
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -613,9 +637,14 @@ void RecorderWriter::WriteUInt32BE(uint32_t x)
 /// </summary>
 /// <param name="data">The raw radiometric data to write.</param>
 /// <param name="count">The number of elements to write.</param>
-void RecorderWriter::WriteRawData(uint16_t* data, int count)
+/// <returns>Returns an error code.</returns>
+int RecorderWriter::WriteRawData(uint16_t* data, int count)
 {
 	fileOut.write((char*)data, count * sizeof(uint16_t));
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -623,10 +652,17 @@ void RecorderWriter::WriteRawData(uint16_t* data, int count)
 /// </summary>
 /// <param name="data">The data to write.</param>
 /// <param name="count">The number of elements to write.</param>
-void RecorderWriter::WriteRawDataBE(uint16_t* data, int count)
+/// <returns>Returns an error code.</returns>
+int RecorderWriter::WriteRawDataBE(uint16_t* data, int count)
 {
 	for (int i = 0; i < count; i++)
-		WriteUInt16BE(data[i]);
+	{
+		int err = WriteUInt16BE(data[i]);
+		if (LRC_FAILED(err))
+			return err;
+	}
+
+	return LRC_ERR_SUCCESS;
 }
 
 #pragma endregion

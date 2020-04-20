@@ -72,7 +72,7 @@ protected:
 	/// <summary>
 	/// Maximum width and height of frames.
 	/// </summary>
-	int width = 0, height = 0;
+	uint16_t width = 0, height = 0;
 
 public:
 	/// <summary>
@@ -143,7 +143,7 @@ public:
 	/// <param name="height">The frame height.</param>
 	/// <param name="fileName">The recording file name.</param>
 	/// <returns>Returns an error code.</returns>
-	int RecordSingleFrame(void* data, FrameDataType dataType, int width, int height, string fileName);
+	int RecordSingleFrame(void* data, FrameDataType dataType, uint16_t width, uint16_t height, string fileName);
 
 	/// <summary>
 	/// Opens a file for manual recording.
@@ -156,7 +156,7 @@ public:
 	/// <param name="width">Width of frames.</param>
 	/// <param name="height">Height of frames.</param>
 	/// <returns>Returns an error code.</returns>
-	int StartRecordingManually(string fileName, int width, int height);
+	int StartRecordingManually(string fileName, uint16_t width, uint16_t height);
 
 	/// <summary>
 	/// Records given data into the given stream of current position in file.
@@ -367,7 +367,7 @@ private:
 	/// <param name="dataHeight">Data height.</param>
 	/// <param name="rect">Rect where data will be written.</param>
 	/// <returns>True if rect fit into frame and data is at least as large as rect. False otherwise.</returns>
-	bool CheckRectSize(int dataWidth, int dataHeight, Int32Rect rect);
+	bool CheckRectSize(uint16_t dataWidth, uint16_t dataHeight, Int32Rect rect);
 
 
 #pragma region Auxiliary writing methods
@@ -377,7 +377,8 @@ protected:
 	/// Writes zeros to the file.
 	/// </summary>
 	/// <param name="count">The number of bytes to write.</param>
-	void WriteZeros(int count);
+	/// <returns>Returns an error code.</returns>
+	int WriteZeros(int count);
 
 	/// <summary>
 	/// Writes a string to the file. If the total length is specified,
@@ -392,28 +393,31 @@ protected:
 	/// Writes a 2-byte unsigned integer to the file in big endian.
 	/// </summary>
 	/// <param name="x">The value to write.</param>
-	void WriteUInt16BE(uint16_t x);
+	/// <returns>Returns an error code.</returns>
+	int WriteUInt16BE(uint16_t x);
 
 	/// <summary>
 	/// Writes a 4-byte unsigned integer to the file in big endian.
 	/// </summary>
 	/// <param name="x">The value to write.</param>
-	void WriteUInt32BE(uint32_t x);
+	/// <returns>Returns an error code.</returns>
+	int WriteUInt32BE(uint32_t x);
 
 	/// <summary>
 	/// Writes raw radiometric data to the file.
 	/// </summary>
 	/// <param name="data">The raw radiometric data to write.</param>
 	/// <param name="count">The number of elements to write.</param>
-	void WriteRawData(uint16_t* data, int count);
+	/// <returns>Returns an error code.</returns>
+	int WriteRawData(uint16_t* data, int count);
 
 	/// <summary>
 	/// Writes raw radiometric data to the file in big endian.
 	/// </summary>
 	/// <param name="data">The data to write.</param>
 	/// <param name="count">The number of elements to write.</param>
-	void WriteRawDataBE(uint16_t* data, int count);
-
+	/// <returns>Returns an error code.</returns>
+	int WriteRawDataBE(uint16_t* data, int count);
 
 #pragma endregion
 

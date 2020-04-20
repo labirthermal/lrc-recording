@@ -64,3 +64,12 @@
 
 // Unknown or incompatible frame data type
 #define LRC_ERR_FRAME_DATA_TYPE	18
+
+// Error opening file (for reading or writing)
+#define LRC_ERR_FILE_OPEN		19
+
+// Error writing to file
+#define LRC_ERR_FILE_WRITE		20
+
+// Error reading from file
+#define LRC_ERR_FILE_READ		21
