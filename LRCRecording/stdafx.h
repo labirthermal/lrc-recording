@@ -5,23 +5,27 @@
 
 #pragma once
 
-#include "targetver.h"
+#ifdef WIN32
+	#include "targetver.h"
+#endif
 
 #include <cstdio>
 #include <string>
 #include <fstream>
 #include <ctime>
+#include <cfloat>
+#include <cmath>
+#include <sys/stat.h>
 
 #ifdef WIN32
-	#include <sys\timeb.h>
+	#include <sys/timeb.h>
 #else
 	#include <sys/time.h>
 #endif
 
-#include <direct.h>
-
 #ifdef WIN32
-	#include "include\dirent.h"
+	#include <direct.h>
+	#include "include/dirent.h"
 #else
 	#include <dirent.h>
 #endif
