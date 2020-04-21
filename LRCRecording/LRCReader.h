@@ -11,6 +11,11 @@ class LRCReader : public PlayableSource
 {
 private:
 	/// <summary>
+	/// The name of the source file.
+	/// </summary>
+	string sourceFileName;
+
+	/// <summary>
 	/// The input file.
 	/// </summary>
 	ifstream fileIn;
@@ -88,13 +93,24 @@ public:
 	/// <summary>
 	/// Creates the LRC reader.
 	/// </summary>
-	/// <param name="fileName">The input file name.</param>
-	LRCReader(string fileName);
+	LRCReader();
 
 	/// <summary>
 	/// Closes the LRC reader.
 	/// </summary>
 	~LRCReader();
+
+	/// <summary>
+	/// Opens a LRC file and reads the first frame.
+	/// </summary>
+	/// <param name="fileName">The input file name.</param>
+	/// <returns>Returns an error code.</returns>
+	int Open(string fileName);
+
+	/// <summary>
+	/// Closes the currently open file.
+	/// </summary>
+	void Close();
 
 protected:
 	/// <summary>
@@ -103,6 +119,11 @@ protected:
 	void AllocateData() override;
 
 public:
+	/// <summary>
+	/// Gets the name of the source file.
+	/// </summary>
+	string GetSourceFileName() { return sourceFileName; }
+
 	/// <summary>
 	/// Gets the note to the current frame.
 	/// </summary>

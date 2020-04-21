@@ -210,17 +210,20 @@ int main()
 		return 1;
 	}
 
-	// open the recorded sequence
+	// play back the recorded sequence
 	printf("Opening recorded sequence...\n");
-	LRCReader reader(recordingName);
+	LRCReader reader;
 	// register callback for processing frames
 	reader.RegisterNewDataCallback(&NewFrameCallback, NULL);
+	// open the recording
+	reader.Open(recordingName);
 	// start playback
 	reader.Play();
 	// wait for playback to finish
 	while (reader.IsPlaying())
 		Sleep(100);
 	// finished
+	reader.Close();
 	printf("Sequence playback finished.\n");
 
 	// manual playback: reader.NextFrame and reader.GetNextFrameTimeStamp

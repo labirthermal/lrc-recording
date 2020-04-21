@@ -4,11 +4,35 @@
 /// <summary>
 /// Creates the LRC reader.
 /// </summary>
+LRCReader::LRCReader()
+{
+	// initialise fields
+	sourceFileName = "";
+	frameNote = "";
+	streamCount = 0;
+	streams = NULL;
+	lrcVersion = 0;
+}
+
+/// <summary>
+/// Closes the LRC reader.
+/// </summary>
+LRCReader::~LRCReader()
+{
+	Close();
+}
+
+/// <summary>
+/// Opens a LRC file and reads the first frame.
+/// </summary>
 /// <param name="fileName">The input file name.</param>
-LRCReader::LRCReader(string fileName)
-	: PlayableSource(fileName)
+/// <returns>Returns an error code.</returns>
+int LRCReader::Open(string fileName)
 {
 	int err;
+
+	// store the source file name
+	this->sourceFileName = fileName;
 
 	// open the input file
 	fileIn.open(fileName, ifstream::binary);
@@ -18,7 +42,7 @@ LRCReader::LRCReader(string fileName)
 	// read file header
 	err = ReadFileHeader();
 	if (LRC_FAILED(err))
-		throw err;
+		return err;
 
 	// allocate memory for the temperature data
 	AllocateData();
@@ -28,14 +52,14 @@ LRCReader::LRCReader(string fileName)
 	// determine file size
 	struct stat fileStat;
 	if (stat(fileName.c_str(), &fileStat) != 0)
-		throw LRC_ERR_DET_FILE_SIZE;
+		return LRC_ERR_DET_FILE_SIZE;
 	// calculate the number of frames in the file
 	frameCount = (int)((fileStat.st_size - fileHeaderSize) / frameSize);
 
 	// get the time stamp of the first frame
 	err = ReadFrameHeader();
 	if (LRC_FAILED(err))
-		throw err;
+		return err;
 	firstFrameTimeStamp = GetFrameTimeStamp();
 	// determine recording duration
 	if (frameCount == 1)
@@ -51,13 +75,15 @@ LRCReader::LRCReader(string fileName)
 	// read the first frame (must rewind after determining the duration)
 	err = Rewind();
 	if (LRC_FAILED(err))
-		throw err;
+		return err;
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
-/// Closes the LRC reader.
+/// Closes the currently open file.
 /// </summary>
-LRCReader::~LRCReader()
+void LRCReader::Close()
 {
 	// stop playback
 	Pause();
@@ -66,19 +92,39 @@ LRCReader::~LRCReader()
 	if (fileIn.is_open())
 		fileIn.close();
 
+	// reset fields
+	sourceFileName = "";
+	frameNote = "";
+	lrcVersion = 0;
+
 	// release memory
 	if (streamHeaderSizes)
+	{
 		delete[] streamHeaderSizes;
+		streamHeaderSizes = NULL;
+	}
 	if (streamSizes)
+	{
 		delete[] streamSizes;
+		streamSizes = NULL;
+	}
 	if (streams)
+	{
 		delete[] streams;
+		streams = NULL;
+		streamCount = 0;
+	}
 	if (uint16buff)
+	{
 		delete[] uint16buff;
+		uint16buff = NULL;
+	}
 
 	// dispose external devices
 	for (map<uint8_t, IExternalDevice*>::iterator it = externalDevices.begin(); it != externalDevices.end(); it++)
 		delete it->second;
+	// clear the list
+	externalDevices.clear();
 }
 
 /// <summary>
@@ -100,7 +146,8 @@ void LRCReader::AllocateData()
 /// </summary>
 void LRCReader::CalculateSizes()
 {
-	fileHeaderSize = fileIn.tellg();
+	// get the file header size
+	fileHeaderSize = (long)fileIn.tellg();
 
 	// frame time stamp
 	frameHeaderSize = sizeof(int64_t);

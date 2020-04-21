@@ -4,8 +4,7 @@
 /// <summary>
 /// Initialises a playable source.
 /// </summary>
-/// <param name="sourceFileName">The name of the source file.</param>
-PlayableSource::PlayableSource(string sourceFileName)
+PlayableSource::PlayableSource()
 {
 	// initialise members
 	frameCount = currentFrameIndex = 0;
@@ -13,9 +12,6 @@ PlayableSource::PlayableSource(string sourceFileName)
 	duration = 0;
 	isPlaying = false;
 	playbackThreadResult = LRC_ERR_SUCCESS;
-
-	// store the source file name
-	this->sourceFileName = sourceFileName;
 }
 
 /// <summary>

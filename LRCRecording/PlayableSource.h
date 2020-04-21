@@ -9,11 +9,6 @@ class PlayableSource : public OfflineSource
 {
 protected:
 	/// <summary>
-	/// The name of the source file.
-	/// </summary>
-	string sourceFileName;
-
-	/// <summary>
 	/// The number of frames available for playback.
 	/// </summary>
 	int frameCount;
@@ -75,8 +70,7 @@ public:
 	/// <summary>
 	/// Initialises a playable source.
 	/// </summary>
-	/// <param name="sourceFileName">The name of the source file.</param>
-	PlayableSource(string sourceFileName);
+	PlayableSource();
 
 	/// <summary>
 	/// Disposes the playable source.
@@ -92,11 +86,6 @@ public:
 	/// Gets the flag indication whether the temperature source can seek to any position in the file.
 	/// </summary>
 	virtual bool CanSeek() = 0;
-
-	/// <summary>
-	/// Gets the name of the source file.
-	/// </summary>
-	string GetSourceFileName() { return sourceFileName; }
 
 	/// <summary>
 	/// Gets the number of frames available for playback.
