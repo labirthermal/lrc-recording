@@ -154,31 +154,35 @@ private:
 	/// <summary>
 	/// Reads data of file header.
 	/// </summary>
-	/// <returns>Returns an error coed.</returns>
+	/// <returns>Returns an error code.</returns>
 	int ReadFileHeader();
 
 	/// <summary>
 	/// Reads data of current frame header.
 	/// </summary>
-	/// <returns>Returns an error coed.</returns>
+	/// <returns>Returns an error code.</returns>
 	int ReadFrameHeader();
 
 	/// <summary>
 	/// Reads data of selected stream header.
 	/// </summary>
-	void ReadStreamHeader();
+	/// <returns>Returns an error code.</returns>
+	int ReadStreamHeader();
 
 public:
 	/// <summary>
 	/// Reads the current frame data.
 	/// </summary>
-	/// <returns>Returns an error coed.</returns>
+	/// <returns>Returns an error code.</returns>
 	int GetFrame() override;
 
 	/// <summary>
-	/// Gets the time stamp of the next frame.
+	/// Reads the time stamp of the next frame and returns the file position to the beginning of that frame.
+	/// The time stamp will be zero if there are no more frames available.
 	/// </summary>
-	uint64_t GetNextFrameTimeStamp() override;
+	/// <param name="timeStamp">Returns the time stamp of the next frame, or zero if there are no more frames available or if the function fails.</param>
+	/// <returns>Returns an error code.</returns>
+	int GetNextFrameTimeStamp(uint64_t* timeStamp) override;
 
 protected:
 	/// <summary>

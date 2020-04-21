@@ -222,6 +222,10 @@ int main()
 	// wait for playback to finish
 	while (reader.IsPlaying())
 		Sleep(100);
+	// check playback result
+	int err = reader.GetPlaybackThreadResult();
+	if (LRC_FAILED(err))
+		printf("Playback failed with error code %d.\n", err);
 	// finished
 	reader.Close();
 	printf("Sequence playback finished.\n");

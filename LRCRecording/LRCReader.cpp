@@ -36,6 +36,8 @@ int LRCReader::Open(string fileName)
 
 	// open the input file
 	fileIn.open(fileName, ifstream::binary);
+	if (fileIn.fail())
+		return LRC_ERR_FILE_OPEN;
 
 	//DynamicHeaderInfo = new SortedDictionary<FileHeaderInfo, object>();
 
@@ -68,8 +70,13 @@ int LRCReader::Open(string fileName)
 	{
 		// seek to the last frame, do not read it
 		SeekToPositionOfFrame(frameCount - 1);
-		// calculate the duration as the difference of time stamps
-		duration = GetNextFrameTimeStamp() - firstFrameTimeStamp;
+		// get the last frame time stamp
+		uint64_t lastFrameTimeStamp;
+		err = GetNextFrameTimeStamp(&lastFrameTimeStamp);
+		if (LRC_FAILED(err))
+			return err;
+		// calculate the recording duration
+		duration = lastFrameTimeStamp - firstFrameTimeStamp;
 	}
 
 	// read the first frame (must rewind after determining the duration)
@@ -134,10 +141,11 @@ void LRCReader::AllocateData()
 {
 	PlayableSource::AllocateData();
 
-	// allocate buffer for reading unit16 data
+	// free the old buffer
 	if (uint16buff)
 		delete[] uint16buff;
 
+	// allocate buffer for reading unit16 data
 	uint16buff = new uint16_t[cameraParams.width * cameraParams.height];
 }
 
@@ -190,17 +198,21 @@ void LRCReader::CalculateSizes()
 /// <summary>
 /// Reads data of file header.
 /// </summary>
-/// <returns>Returns an error coed.</returns>
+/// <returns>Returns an error code.</returns>
 int LRCReader::ReadFileHeader()
 {
 	// check the file signature
 	char signature[4];
 	fileIn.read(signature, 4);
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 	if (strcmp(signature, LRCCommon::FileTypeHeader))
 		return LRC_ERR_FILE_SIGNATURE;
 
 	// read file version
 	fileIn.read((char*)&lrcVersion, sizeof(uint8_t));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 	// version 1 had no version field in the file, there was the first byte of the file time stamp which is 8
 	// so let's rely on the fact that the file version will not get to 8 anytime soon
 	if (lrcVersion == 0 || lrcVersion >= 8)
@@ -216,9 +228,13 @@ int LRCReader::ReadFileHeader()
 		fileIn.seekg(4, ifstream::beg);
 		// skip recording date
 		fileIn.ignore(sizeof(int64_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 		// prepare objects for the external devices
 		uint8_t extDevCount1;
 		fileIn.read((char*)&extDevCount1, sizeof(uint8_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 		for (uint8_t i = 0; i < extDevCount1; i++)
 			externalDevices.insert(pair<uint8_t, IExternalDevice*>(i, new BasicExternalDevice("legacy device", sizeof(short))));
 		break;
@@ -227,25 +243,37 @@ int LRCReader::ReadFileHeader()
 		// LRC version 2
 		// skip recording date
 		fileIn.ignore(sizeof(int64_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 		// read the external devices
 		uint8_t extDevCount2;
 		fileIn.read((char*)&extDevCount2, sizeof(uint8_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 		for (int i = 0; i < extDevCount2; i++)
 		{
 			// read the external device information
 			// device ID
 			uint8_t id;
 			fileIn.read((char*)&id, sizeof(uint8_t));
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 			// device name
 			char nameLength;
 			fileIn.read(&nameLength, sizeof(char));
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 			char* nameChr = new char[nameLength + 1];
 			fileIn.read(nameChr, nameLength);
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 			string name(nameChr, nameLength);
 			delete[] nameChr;
 			// device data size
 			uint16_t dataSize;
 			fileIn.read((char*)&dataSize, sizeof(uint16_t));
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 
 			// create a basic device
 			externalDevices.insert(pair<uint8_t, IExternalDevice*>(id, new BasicExternalDevice(name, dataSize)));
@@ -258,24 +286,33 @@ int LRCReader::ReadFileHeader()
 
 	// read the streams
 	fileIn.read((char*)&streamCount, sizeof(uint8_t));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 	streams = new LRCCommon::StreamInfo[streamCount];
 	for (int i = 0; i < streamCount; i++)
 	{
-		uint8_t dataType, units;
-		fileIn.read((char*)&dataType, sizeof(uint8_t));
-		fileIn.read((char*)&units, sizeof(uint8_t));
+		uint8_t typeUnits[2];
+		fileIn.read((char*)&typeUnits, sizeof(typeUnits));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 
-		streams[i].dataType = (LRCCommon::FileDataType)dataType;
-		streams[i].units = (TemperatureSourceUnits)units;
+		streams[i].dataType = (LRCCommon::FileDataType)typeUnits[0];
+		streams[i].units = (TemperatureSourceUnits)typeUnits[1];
 	}
 
 	// read the camera resolution
-	fileIn.read((char*)&cameraParams.width, sizeof(uint16_t));
-	fileIn.read((char*)&cameraParams.height, sizeof(uint16_t));
+	uint16_t res[2];
+	fileIn.read((char*)&res, sizeof(res));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
+	cameraParams.width = res[0];
+	cameraParams.height = res[1];
 
 	// read flags indicating optional fields
 	uint32_t headerFlags;
 	fileIn.read((char*)&headerFlags, sizeof(uint32_t));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 	// optional fields are not supported
 	if (headerFlags > 0)
 		return LRC_ERR_OPTIONAL_DATA;
@@ -289,6 +326,8 @@ int LRCReader::ReadFileHeader()
 			DynamicHeaderInfo[flag] = fileIn.ReadUInt16();
 		else if (LRCFileData.DateTimeFlags.Contains(flag))
 			DynamicHeaderInfo[flag] = DateTime.FromBinary(fileIn.ReadInt64());
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 	}
 	*/
 
@@ -298,12 +337,14 @@ int LRCReader::ReadFileHeader()
 /// <summary>
 /// Reads data of current frame header.
 /// </summary>
-/// <returns>Returns an error coed.</returns>
+/// <returns>Returns an error code.</returns>
 int LRCReader::ReadFrameHeader()
 {
 	// read the frame time stamp
 	int64_t binTime;
 	fileIn.read((char*)&binTime, sizeof(int64_t));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 	frameTimeStamp = DateTime::TimeFromBinary(binTime);
 
 	/* frame notes not supported
@@ -326,6 +367,8 @@ int LRCReader::ReadFrameHeader()
 		{
 			char devData[sizeof(int16_t)];
 			fileIn.read(devData, sizeof(int16_t));
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 			externalDevices.at(i)->SetBinaryData(devData);
 		}
 		break;
@@ -337,12 +380,16 @@ int LRCReader::ReadFrameHeader()
 			// read the device ID
 			uint8_t id;
 			fileIn.read((char*)&id, sizeof(uint8_t));
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 			// get the device by ID
 			IExternalDevice* device = externalDevices.at(id);
 			// read the device data
 			uint16_t devDataSize = device->GetDataSize();
 			char* devData = new char[devDataSize];
 			fileIn.read(devData, devDataSize);
+			if (fileIn.fail())
+				return LRC_ERR_FILE_READ;
 			device->SetBinaryData(devData);
 			delete[] devData;
 		}
@@ -358,41 +405,45 @@ int LRCReader::ReadFrameHeader()
 /// <summary>
 /// Reads data of selected stream header.
 /// </summary>
-void LRCReader::ReadStreamHeader()
+/// <returns>Returns an error code.</returns>
+int LRCReader::ReadStreamHeader()
 {
-	// read the data range
-	range.ResetActualRange();
-	float min, max;
-	fileIn.read((char*)&min, sizeof(float));
-	fileIn.read((char*)&max, sizeof(float));
-	range.IncludeValue(min);
-	range.IncludeValue(max);
+	// read the data temperature range
+	float dr[2];
+	fileIn.read((char*)dr, sizeof(dr));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
+	range.min = dr[0];
+	range.max = dr[1];
 
-	// skip the camera temperature range
-	fileIn.ignore(2 * sizeof(float));
+	// read the camera temperature range
+	float cr[2];
+	fileIn.read((char*)cr, sizeof(cr));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
+	// the camera range is not stored anywhere now
 
 	// read the object parameters
-	fileIn.read((char*)&objectParams.emissivity, sizeof(float));
-	fileIn.read((char*)&objectParams.reflectedTempK, sizeof(float));
-	fileIn.read((char*)&objectParams.distance, sizeof(float));
-	fileIn.read((char*)&objectParams.atmosphericTempK, sizeof(float));
-	fileIn.read((char*)&objectParams.relHumidity, sizeof(float));
-	fileIn.read((char*)&objectParams.tau, sizeof(float));
-	fileIn.read((char*)&objectParams.windowTempK, sizeof(float));
-	fileIn.read((char*)&objectParams.windowTransmiss, sizeof(float));
-	fileIn.read((char*)&objectParams.isTauSet, sizeof(bool));
+	fileIn.read((char*)&objectParams, 8 * sizeof(float) + sizeof(bool));	// do not use sizeof(ObjectParameters), there are some additional constants
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 	// calculate tau if necessary
 	if (!objectParams.isTauSet)
 		objectParams.CalculateTau();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
 /// Reads the current frame data.
 /// </summary>
-/// <returns>Returns an error coed.</returns>
+/// <returns>Returns an error code.</returns>
 int LRCReader::GetFrame()
 {
-	int err = ReadFrameHeader();
+	int err;
+
+	// read the frame header
+	err = ReadFrameHeader();
 	if (LRC_FAILED(err))
 		return err;
 
@@ -400,7 +451,10 @@ int LRCReader::GetFrame()
 	for (int i = 0; i < selectedStreamIndex; i++)
 		fileIn.seekg(streamSizes[i], ifstream::cur);
 
-	ReadStreamHeader();
+	// read the stream header
+	err = ReadStreamHeader();
+	if (LRC_FAILED(err))
+		return err;
 
 	// read the temperature data
 	int pixelCount = cameraParams.width * cameraParams.height;
@@ -410,6 +464,8 @@ int LRCReader::GetFrame()
 		{
 		// read uint16 data
 		fileIn.read((char*)uint16buff, pixelCount * sizeof(uint16_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 		// decode from uint16 to actual temperatures
 		double rangeLength = range.GetLength();
 		for (int i = 0; i < pixelCount; i++)
@@ -420,6 +476,8 @@ int LRCReader::GetFrame()
 	case LRCCommon::FileDataType::Float:
 		// read float data
 		fileIn.read((char*)data, pixelCount * sizeof(float));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
 		break;
 	}
 
@@ -431,22 +489,32 @@ int LRCReader::GetFrame()
 }
 
 /// <summary>
-/// Gets the time stamp of the next frame.
+/// Reads the time stamp of the next frame and returns the file position to the beginning of that frame.
+/// The time stamp will be zero if there are no more frames available.
 /// </summary>
-uint64_t LRCReader::GetNextFrameTimeStamp()
+/// <param name="timeStamp">Returns the time stamp of the next frame, or zero if there are no more frames available or if the function fails.</param>
+/// <returns>Returns an error code.</returns>
+int LRCReader::GetNextFrameTimeStamp(uint64_t* timeStamp)
 {
-	// check end of file
+	// reset the time stamp (it should be zero in case of read error)
+	*timeStamp = 0;
+
+	// if at the end of the file, it's not an error, just return zero time stamp
 	if (fileIn.eof())
-		return 0;
+		return LRC_ERR_SUCCESS;
 
 	// read the time stamp
 	uint64_t binTimeStamp;
 	fileIn.read((char*)&binTimeStamp, sizeof(uint64_t));
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
 
 	// seek back to the beginning of the frame
 	fileIn.seekg(-(int)sizeof(uint64_t), ifstream::cur);
 
-	return DateTime::TimeFromBinary(binTimeStamp);
+	// convert the binary data to DateTime
+	*timeStamp = DateTime::TimeFromBinary(binTimeStamp);
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>

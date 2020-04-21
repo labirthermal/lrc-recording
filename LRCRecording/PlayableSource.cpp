@@ -196,6 +196,8 @@ int PlayableSource::SeekToFrame(int frameIndex)
 /// </summary>
 void PlayableSource::PlaybackThread()
 {
+	int err;
+
 	// reset error code
 	playbackThreadResult = LRC_ERR_SUCCESS;
 
@@ -209,14 +211,14 @@ void PlayableSource::PlaybackThread()
 
 		// read a frame
 		currentFrameIndex++;
-		int err = GetFrame();
+		err = GetFrame();
 
 		playbackMutex.unlock();
 
 		// check GetFrame result
 		if (LRC_FAILED(err))
 		{
-			// stop the playback
+			// error, stop the playback
 			isPlaying = false;
 			playbackThreadResult = err;
 			return;
@@ -225,8 +227,17 @@ void PlayableSource::PlaybackThread()
 		// inform the base class that new data have been received
 		DataReceived();
 
+		// schedule the next frame
+		err = ScheduleNextFrame();
+		if (LRC_FAILED(err))
+		{
+			// error, stop the playback
+			isPlaying = false;
+			playbackThreadResult = err;
+			return;
+		}
+
 		// wait until the next frame
-		ScheduleNextFrame();
 		schedulingCondVar.wait_until(schedulingLock, nextFramePlayTime,
 			// filter out spurious wake ups
 			[&] { return chrono::steady_clock::now() >= nextFramePlayTime; });
@@ -238,7 +249,8 @@ void PlayableSource::PlaybackThread()
 /// <summary>
 /// Sets up a timer to read the next frame to play the video.
 /// </summary>
-void PlayableSource::ScheduleNextFrame()
+/// <returns>Returns an error code.</returns>
+int PlayableSource::ScheduleNextFrame()
 {
 	playbackMutex.lock();
 
@@ -248,8 +260,16 @@ void PlayableSource::ScheduleNextFrame()
 		Pause();
 	else
 	{
+		// get the next frame time stamp
+		uint64_t nextFrameTimeStamp;
+		int err = GetNextFrameTimeStamp(&nextFrameTimeStamp);
+		if (LRC_FAILED(err))
+		{
+			playbackMutex.unlock();
+			return err;
+		}
 		// calculate the time to the next frame (measured from the previous frame, not from now)
-		uint64_t timeToNextFrame = GetNextFrameTimeStamp() - frameTimeStamp;
+		uint64_t timeToNextFrame = nextFrameTimeStamp - frameTimeStamp;
 		
 		// store the time when the next frame should be played
 		nextFramePlayTime += chrono::milliseconds(timeToNextFrame);
@@ -264,4 +284,5 @@ void PlayableSource::ScheduleNextFrame()
 	}
 	
 	playbackMutex.unlock();
+	return LRC_ERR_SUCCESS;
 }

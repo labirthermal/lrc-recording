@@ -186,9 +186,11 @@ protected:
 public:
 	/// <summary>
 	/// Reads the time stamp of the next frame and returns the file position to the beginning of that frame.
+	/// The time stamp will be zero if there are no more frames available.
 	/// </summary>
-	/// <returns>Returns the time stamp of the next frame, or zero if there are no more frames available.</returns>
-	virtual uint64_t GetNextFrameTimeStamp() = 0;
+	/// <param name="timeStamp">Returns the time stamp of the next frame, or zero if there are no more frames available or if the function fails.</param>
+	/// <returns>Returns an error code.</returns>
+	virtual int GetNextFrameTimeStamp(uint64_t* timeStamp) = 0;
 
 private:
 	/// <summary>
@@ -199,6 +201,7 @@ private:
 	/// <summary>
 	/// Sets up a timer to read the next frame to play the video.
 	/// </summary>
-	void ScheduleNextFrame();
+	/// <returns>Returns an error code.</returns>
+	int ScheduleNextFrame();
 };
 
