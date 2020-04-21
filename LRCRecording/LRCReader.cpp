@@ -68,13 +68,13 @@ LRCReader::~LRCReader()
 
 	// release memory
 	if (streamHeaderSizes)
-		delete streamHeaderSizes;
+		delete[] streamHeaderSizes;
 	if (streamSizes)
-		delete streamSizes;
+		delete[] streamSizes;
 	if (streams)
-		delete streams;
+		delete[] streams;
 	if (uint16buff)
-		delete uint16buff;
+		delete[] uint16buff;
 
 	// dispose external devices
 	for (map<uint8_t, IExternalDevice*>::iterator it = externalDevices.begin(); it != externalDevices.end(); it++)
@@ -90,7 +90,7 @@ void LRCReader::AllocateData()
 
 	// allocate buffer for reading unit16 data
 	if (uint16buff)
-		delete uint16buff;
+		delete[] uint16buff;
 
 	uint16buff = new uint16_t[cameraParams.width * cameraParams.height];
 }
@@ -195,7 +195,7 @@ int LRCReader::ReadFileHeader()
 			char* nameChr = new char[nameLength + 1];
 			fileIn.read(nameChr, nameLength);
 			string name(nameChr, nameLength);
-			delete nameChr;
+			delete[] nameChr;
 			// device data size
 			uint16_t dataSize;
 			fileIn.read((char*)&dataSize, sizeof(uint16_t));
@@ -297,7 +297,7 @@ int LRCReader::ReadFrameHeader()
 			char* devData = new char[devDataSize];
 			fileIn.read(devData, devDataSize);
 			device->SetBinaryData(devData);
-			delete devData;
+			delete[] devData;
 		}
 		break;
 
