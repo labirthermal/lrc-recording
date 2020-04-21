@@ -134,7 +134,8 @@ public:
 	/// Sets the object parameters.
 	/// Used for on-line sources such as cameras.
 	/// </summary>
-	virtual void SetObjectParameters(ObjectParameters value) = 0;
+	/// <returns>Returns an error code.</returns>
+	virtual int SetObjectParameters(ObjectParameters value) = 0;
 
 	/// <summary>
 	/// Gets the number of streams.
@@ -149,6 +150,7 @@ public:
 	/// <summary>
 	/// Sets the selected stream index.
 	/// </summary>
-	virtual void SetSelectedStreamIndex(uint8_t value) { selectedStreamIndex = value; }
+	/// <returns>Returns an error code.</returns>
+	virtual int SetSelectedStreamIndex(uint8_t value);
 };
 

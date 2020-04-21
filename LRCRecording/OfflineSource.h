@@ -36,9 +36,11 @@ public:
 	/// Sets the object parameters.
 	/// Used for on-line sources such as cameras.
 	/// </summary>
-	void SetObjectParameters(ObjectParameters value) override
+	/// <returns>Returns an error code.</returns>
+	int SetObjectParameters(ObjectParameters value) override
 	{
-		throw runtime_error("Cannot set object parameters of an off-line source.");
+		// cannot set object parameters of an off-line source
+		return LRC_ERR_INVALID_VALUE;
 	}
 };
 

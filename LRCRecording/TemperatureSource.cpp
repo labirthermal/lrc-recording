@@ -60,3 +60,18 @@ void TemperatureSource::DataReceived()
 	if (newDataCallback)
 		newDataCallback(data, &range, frameTimeStamp, newDataCallbackUserData);
 }
+
+/// <summary>
+/// Sets the selected stream index.
+/// </summary>
+/// <returns>Returns an error code.</returns>
+int TemperatureSource::SetSelectedStreamIndex(uint8_t value)
+{
+	// check index bounds
+	if (value >= streamCount)
+		return LRC_ERR_INVALID_VALUE;
+	
+	// set the index
+	selectedStreamIndex = value;
+	return LRC_ERR_SUCCESS;
+}

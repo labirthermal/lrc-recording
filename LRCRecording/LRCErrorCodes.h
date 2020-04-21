@@ -73,3 +73,6 @@
 
 // Error reading from file
 #define LRC_ERR_FILE_READ		21
+
+// Attempted to set an invalid value (this error code is returned by setters)
+#define LRC_ERR_INVALID_VALUE	22
