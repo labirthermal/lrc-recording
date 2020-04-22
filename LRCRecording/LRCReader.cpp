@@ -363,7 +363,7 @@ int LRCReader::ReadFrameHeader()
 	{
 	case 1:
 		// LRC version 1
-		for (size_t i = 0; i < externalDevices.size(); i++)
+		for (uint8_t i = 0; i < externalDevices.size(); i++)
 		{
 			char devData[sizeof(int16_t)];
 			fileIn.read(devData, sizeof(int16_t));
@@ -375,7 +375,7 @@ int LRCReader::ReadFrameHeader()
 
 	case 2:
 		// LRC version 2
-		for (size_t i = 0; i < externalDevices.size(); i++)
+		for (uint8_t i = 0; i < externalDevices.size(); i++)
 		{
 			// read the device ID
 			uint8_t id;

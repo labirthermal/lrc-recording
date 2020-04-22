@@ -607,7 +607,7 @@ int RecorderWriter::WriteString(string str, int totalLength)
 /// <returns>Returns an error code.</returns>
 int RecorderWriter::WriteUInt16BE(uint16_t x)
 {
-	char c[2] { x >> 8, x & 0xFF };
+	char c[2] { (char)(x >> 8), (char)(x & 0xFF) };
 	fileOut.write(c, 2);
 
 	if (fileOut.fail())
@@ -623,7 +623,7 @@ int RecorderWriter::WriteUInt16BE(uint16_t x)
 /// <returns>Returns an error code.</returns>
 int RecorderWriter::WriteUInt32BE(uint32_t x)
 {
-	char c[4] { x >> 24, (x >> 16) & 0xFF, (x >> 8) & 0xFF, x & 0xFF };
+	char c[4] { (char)(x >> 24), (char)((x >> 16) & 0xFF), (char)((x >> 8) & 0xFF), (char)(x & 0xFF) };
 	fileOut.write(c, 4);
 
 	{if (fileOut.fail())
