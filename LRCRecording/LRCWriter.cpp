@@ -265,8 +265,7 @@ int LRCWriter::WriteFileHeader()
 	for (int i = 0; i < streamCount; i++)
 	{
 		// write stream data type and units
-		uint8_t typeUnits[2] { (uint8_t)streams[i].dataType, (uint8_t)streams[i].units };
-		fileOut.write((char*)&typeUnits, sizeof(typeUnits));
+		fileOut.write((char*)&streams[i], 2 * sizeof(uint8_t));	// do not use sizeof(StreamInfo), there are more variables
 		if (fileOut.fail())
 			return LRC_ERR_FILE_WRITE;
 	}

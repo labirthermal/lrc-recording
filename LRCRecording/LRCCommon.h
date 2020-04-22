@@ -20,7 +20,7 @@ public:
 	/// <summary>
 	/// Data type for writing temperatures to file.
 	/// </summary>
-	enum FileDataType { UInt16, Float };
+	enum FileDataType : uint8_t { UInt16, Float };
 
 	/// <summary>
 	/// Struct that holds info about LRC stream.
@@ -28,6 +28,11 @@ public:
 	/// </summary>
 	struct StreamInfo
 	{
+		/// <summary>
+		/// File data type of this stream.
+		/// </summary>
+		FileDataType dataType;
+
 		/// <summary>
 		/// Units of temperature.
 		/// </summary>
@@ -37,10 +42,5 @@ public:
 		/// Object parameters of this stream.
 		/// </summary>
 		ObjectParameters objectParams;
-
-		/// <summary>
-		/// File data type of this stream.
-		/// </summary>
-		FileDataType dataType;
 	};
 };

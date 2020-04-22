@@ -10,14 +10,14 @@ using namespace std;
 /// <summary>
 /// Types of units for writing temperatures to file.
 /// </summary>
-enum TemperatureSourceUnits { None, Intensity, Celsius, Kelvin, Time, Radians };
+enum TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, Radians };
 
 
 
 /// <summary>
 /// Frame data types. This is the input data type. The recorder may save it to a file as a different type according to its settings.
 /// </summary>
-enum FrameDataType { Float, UInt16 };
+enum FrameDataType : uint8_t { Float, UInt16 };
 
 
 

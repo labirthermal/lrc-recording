@@ -558,13 +558,20 @@ bool RecorderWriter::CheckRectSize(uint16_t dataWidth, uint16_t dataHeight, Int3
 /// <returns>Returns an error code.</returns>
 int RecorderWriter::WriteZeros(int count)
 {
-	for (int i = 0; i < count; i++)
-	{
-		fileOut.put(0);
-		if (fileOut.fail())
-			return LRC_ERR_FILE_WRITE;
-	}
+	// create a zero memory
+	char* zeros = new char[count];
+	memset(zeros, 0, count);
 
+	// write the zeros
+	fileOut.write(zeros, count);
+
+	// free memory
+	delete[] zeros;
+
+	// check write result
+	if (fileOut.fail())
+		return LRC_ERR_FILE_WRITE;
+	
 	return LRC_ERR_SUCCESS;
 }
 

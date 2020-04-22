@@ -291,22 +291,16 @@ int LRCReader::ReadFileHeader()
 	streams = new LRCCommon::StreamInfo[streamCount];
 	for (int i = 0; i < streamCount; i++)
 	{
-		uint8_t typeUnits[2];
-		fileIn.read((char*)&typeUnits, sizeof(typeUnits));
+		// read the stream data type and units
+		fileIn.read((char*)&streams[i], 2 * sizeof(uint8_t));	// do not use sizeof(StreamInfo), there are more variables
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
-
-		streams[i].dataType = (LRCCommon::FileDataType)typeUnits[0];
-		streams[i].units = (TemperatureSourceUnits)typeUnits[1];
 	}
 
 	// read the camera resolution
-	uint16_t res[2];
-	fileIn.read((char*)&res, sizeof(res));
+	fileIn.read((char*)&cameraParams, 2 * sizeof(uint16_t));	// do not use sizeof(CameraParameters), there may be more variables
 	if (fileIn.fail())
 		return LRC_ERR_FILE_READ;
-	cameraParams.width = res[0];
-	cameraParams.height = res[1];
 
 	// read flags indicating optional fields
 	uint32_t headerFlags;
