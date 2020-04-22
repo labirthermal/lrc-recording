@@ -206,32 +206,22 @@ void PlayableSource::PlaybackThread()
 	// while playback is on
 	while (isPlaying)
 	{
-		playbackMutex.lock();
-
-		// read a frame
-		currentFrameIndex++;
-		err = GetFrame();
-
-		playbackMutex.unlock();
-
-		// check GetFrame result
+		// play a frame
+		err = NextFrame();
 		if (LRC_FAILED(err))
 		{
 			// error, stop the playback
-			isPlaying = false;
+			Pause();
 			playbackThreadResult = err;
 			return;
 		}
-
-		// inform the base class that new data have been received
-		DataReceived();
 
 		// schedule the next frame
 		err = ScheduleNextFrame();
 		if (LRC_FAILED(err))
 		{
-			// error, stop the playback
-			isPlaying = false;
+			// end of recording or error, stop the playback
+			Pause();
 			playbackThreadResult = err;
 			return;
 		}
@@ -253,34 +243,28 @@ int PlayableSource::ScheduleNextFrame()
 {
 	playbackMutex.lock();
 
-	// check there are frames available
-	if (currentFrameIndex == frameCount - 1)
-		// no, we are at the end, stop playing
-		Pause();
-	else
+	// get the next frame time stamp
+	uint64_t nextFrameTimeStamp;
+	int err = GetNextFrameTimeStamp(&nextFrameTimeStamp);
+	if (LRC_FAILED(err))
 	{
-		// get the next frame time stamp
-		uint64_t nextFrameTimeStamp;
-		int err = GetNextFrameTimeStamp(&nextFrameTimeStamp);
-		if (LRC_FAILED(err))
-		{
-			playbackMutex.unlock();
-			return err;
-		}
-		// calculate the time to the next frame (measured from the previous frame, not from now)
-		uint64_t timeToNextFrame = nextFrameTimeStamp - frameTimeStamp;
-		
-		// store the time when the next frame should be played
-		nextFramePlayTime += chrono::milliseconds(timeToNextFrame);
-
-		// get the current time
-		chrono::steady_clock::time_point now = chrono::steady_clock::now();
-		// if the next frame should have already been played, schedule it for now
-		// (for example when the disk gets slow, frames would be scheduled in the past,
-		// then the disk gets fast and several frames would be played rapidly without delay)
-		if (nextFramePlayTime < now)
-			nextFramePlayTime = now;
+		// end of recording or error
+		playbackMutex.unlock();
+		return err;
 	}
+	// calculate the time to the next frame (measured from the previous frame, not from now)
+	uint64_t timeToNextFrame = nextFrameTimeStamp - frameTimeStamp;
+		
+	// store the time when the next frame should be played
+	nextFramePlayTime += chrono::milliseconds(timeToNextFrame);
+
+	// get the current time
+	chrono::steady_clock::time_point now = chrono::steady_clock::now();
+	// if the next frame should have already been played, schedule it for now
+	// (for example when the disk gets slow, frames would be scheduled in the past,
+	// then the disk gets fast and several frames would be played rapidly without delay)
+	if (nextFramePlayTime < now)
+		nextFramePlayTime = now;
 	
 	playbackMutex.unlock();
 	return LRC_ERR_SUCCESS;

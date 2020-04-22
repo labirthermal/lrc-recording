@@ -490,24 +490,24 @@ int LRCReader::GetFrame()
 
 /// <summary>
 /// Reads the time stamp of the next frame and returns the file position to the beginning of that frame.
-/// The time stamp will be zero if there are no more frames available.
 /// </summary>
-/// <param name="timeStamp">Returns the time stamp of the next frame, or zero if there are no more frames available or if the function fails.</param>
+/// <param name="timeStamp">Returns the time stamp of the next frame, or if the function fails.</param>
 /// <returns>Returns an error code.</returns>
 int LRCReader::GetNextFrameTimeStamp(uint64_t* timeStamp)
 {
 	// reset the time stamp (it should be zero in case of read error)
 	*timeStamp = 0;
 
-	// if at the end of the file, it's not an error, just return zero time stamp
-	if (fileIn.eof())
-		return LRC_ERR_SUCCESS;
-
 	// read the time stamp
 	uint64_t binTimeStamp;
 	fileIn.read((char*)&binTimeStamp, sizeof(uint64_t));
 	if (fileIn.fail())
-		return LRC_ERR_FILE_READ;
+	{
+		if (fileIn.eof())
+			return LRC_ERR_REC_END;
+		else
+			return LRC_ERR_FILE_READ;
+	}
 
 	// seek back to the beginning of the frame
 	fileIn.seekg(-(int)sizeof(uint64_t), ifstream::cur);

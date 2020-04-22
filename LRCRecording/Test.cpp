@@ -224,14 +224,14 @@ int main()
 		Sleep(100);
 	// check playback result
 	int err = reader.GetPlaybackThreadResult();
-	if (LRC_FAILED(err))
+	if (LRC_FAILED(err) && err != LRC_ERR_REC_END)
 		printf("Playback failed with error code %d.\n", err);
 	// finished
 	reader.Close();
 	printf("Sequence playback finished.\n");
 
 	// manual playback: reader.NextFrame and reader.GetNextFrameTimeStamp
-	// reader.NextFrame returns LRC_ERR_REC_END when trying to read after the last frame
+	// the functions return LRC_ERR_REC_END when trying to read after the last frame
 	// access current frame data: reader.GetTemperatureData, reader.GetDataRange, reader.GetFrameTimeStamp
 
     return 0;

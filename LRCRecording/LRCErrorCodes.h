@@ -77,5 +77,5 @@
 // Attempted to set an invalid value (this error code is returned by setters)
 #define LRC_ERR_INVALID_VALUE	22
 
-// Recording end, returned when NextFrame is called and the player is already at the last frame
+// Recording end, the player tried to read after the last frame
 #define LRC_ERR_REC_END			23

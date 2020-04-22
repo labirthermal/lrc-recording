@@ -178,9 +178,8 @@ public:
 
 	/// <summary>
 	/// Reads the time stamp of the next frame and returns the file position to the beginning of that frame.
-	/// The time stamp will be zero if there are no more frames available.
 	/// </summary>
-	/// <param name="timeStamp">Returns the time stamp of the next frame, or zero if there are no more frames available or if the function fails.</param>
+	/// <param name="timeStamp">Returns the time stamp of the next frame, or if the function fails.</param>
 	/// <returns>Returns an error code.</returns>
 	int GetNextFrameTimeStamp(uint64_t* timeStamp) override;
 
