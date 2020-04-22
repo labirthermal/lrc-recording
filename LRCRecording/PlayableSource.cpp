@@ -62,26 +62,25 @@ int PlayableSource::NextFrame()
 	playbackMutex.lock();
 	
 	// do not read beyond the end
-	bool isNewFrame = false;
-	int err = LRC_ERR_SUCCESS;
+	int err;
 	if (currentFrameIndex < frameCount - 1)
 	{
-		isNewFrame = true;
-
 		// read a frame
 		currentFrameIndex++;
 		err = GetFrame();
 	}
+	else
+		// end of recording
+		err = LRC_ERR_REC_END;
 
 	playbackMutex.unlock();
 
-	// check GetFrame result
+	// check result
 	if (LRC_FAILED(err))
 		return err;
 
 	// inform the base class that new data have been received
-	if (isNewFrame)
-		DataReceived();
+	DataReceived();
 
 	return LRC_ERR_SUCCESS;
 }
