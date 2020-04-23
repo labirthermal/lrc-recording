@@ -70,9 +70,9 @@ private:
 
 protected:
 	/// <summary>
-	/// Maximum width and height of frames.
+	/// The camera parameters describing the data that will be recorded.
 	/// </summary>
-	uint16_t width = 0, height = 0;
+	CameraParameters cameraParams;
 
 public:
 	/// <summary>
@@ -138,12 +138,10 @@ public:
 	/// Records a single frame.
 	/// </summary>
 	/// <param name="data">The frame data.</param>
-	/// <param name="dataType">The frame data type.</param>
-	/// <param name="width">The frame width.</param>
-	/// <param name="height">The frame height.</param>
+	/// <param name="cameraParams">The camera parameters describing the frame data type and resolution.</param>
 	/// <param name="fileName">The recording file name.</param>
 	/// <returns>Returns an error code.</returns>
-	int RecordSingleFrame(void* data, FrameDataType dataType, uint16_t width, uint16_t height, string fileName);
+	int RecordSingleFrame(void* data, CameraParameters cameraParams, string fileName);
 
 	/// <summary>
 	/// Opens a file for manual recording.
@@ -153,23 +151,21 @@ public:
 	/// Call Close or Dispose method when recording is done.
 	/// </remarks>
 	/// <param name="fileName">Output file name.</param>
-	/// <param name="width">Width of frames.</param>
-	/// <param name="height">Height of frames.</param>
+	/// <param name="cameraParams">The camera parameters describing the frame data type and resolution.</param>
 	/// <returns>Returns an error code.</returns>
-	int StartRecordingManually(string fileName, uint16_t width, uint16_t height);
+	int StartRecordingManually(string fileName, CameraParameters cameraParams);
 
 	/// <summary>
 	/// Records given data into the given stream of current position in file.
 	/// Use this method if writing whole new frame of completely rewriting existing frame (including header).
 	/// </summary>
 	/// <param name="data">Frame data.</param>
-	/// <param name="dataType">The frame data type.</param>
 	/// <param name="streamId">Stream ID.</param>
 	/// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 	/// <param name="range">Range of data values. If null, the range will be calculated.</param>
 	/// <param name="frameTimestamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <returns>Returns an error code.</returns>
-	int RecordFrame(void* data, FrameDataType dataType, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
+	int RecordFrame(void* data, char streamId = 0, Int32Rect dataRect = Int32Rect(), Range range = Range(), uint64_t frameTimestamp = 0);
 
 	/// <summary>
 	/// Closes the file being recorded.
@@ -191,13 +187,12 @@ protected:
 	///	Consider this if there are multiple streams.
 	/// </remarks>
 	/// <param name="data">Data array of frame.</param>
-	/// <param name="dataType">The frame data type.</param>
 	/// <param name="streamId">Id of stream that will be written.</param>
 	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
 	/// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <returns>Returns an error code.</returns>
-	virtual int WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
+	virtual int WriteFrame(void* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) = 0;
 
 	/// <summary>
 	/// Size of file header in bytes.
@@ -214,16 +209,6 @@ protected:
 #pragma region Properties
 
 public:
-	/// <summary>
-	/// Gets the maximum frame width.
-	/// </summary>
-	int GetWidth() { return width; }
-
-	/// <summary>
-	/// Gets the maximum frame height.
-	/// </summary>
-	int GetHeight() { return height; }
-
 	/// <summary>
 	/// Gets or sets the maximum recording file size before splitting into multiple files.
 	/// </summary>

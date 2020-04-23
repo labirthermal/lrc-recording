@@ -108,7 +108,7 @@ void LRCWriter::CalculateSizes()
 		// calculate stream size
 		streamSizes[i] =
 			streamHeaderSizes[i] +	// stream header
-			width * height * dataTypeSize;	// data
+			cameraParams.width * cameraParams.height * dataTypeSize;	// data
 
 		// sum the stream sizes
 		streamSizesSum += streamSizes[i];
@@ -122,13 +122,12 @@ void LRCWriter::CalculateSizes()
 /// Writes data to first stream of next frame.
 /// </summary>
 /// <param name="data">Data array of frame.</param>
-/// <param name="dataType">The frame data type.</param>
 /// <param name="streamId">Id of stream that will be written.</param>
 /// <param name="rect">Rectangle where parameter data should be written.</param>
 /// <param name="dataRange">Range of data.</param>
 /// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 /// <returns>Returns an error code.</returns>
-int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime)
+int LRCWriter::WriteFrame(void* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime)
 {
 	int err;
 
@@ -153,21 +152,13 @@ int LRCWriter::WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, 
 		fileOut.seekp(streamSizes[i] - streamHeaderSizes[i], ofstream::cur);
 	}
 
-	// if saving raw uint16 data
-	if (dataType == FrameDataType::UInt16)
-	{
-		// set the data range to whole uint16 range (to save the data as they are, no range stretching)
-		dataRange.min = 0;
-		dataRange.max = UINT16_MAX;
-	}
-
 	// overwrite stream header
 	err = WriteStreamHeader(streamId, dataRange);
 	if (LRC_FAILED(err))
 		return err;
 
 	// overwrite stream data
-	switch (dataType)
+	switch (cameraParams.dataType)
 	{
 	case FrameDataType::Float:
 		err = WriteFrameData((float*)data, rect, dataRange);
@@ -271,7 +262,7 @@ int LRCWriter::WriteFileHeader()
 	}
 
 	// write resolution
-	uint16_t res[2] { width, height };
+	uint16_t res[2] { cameraParams.width, cameraParams.height };
 	fileOut.write((char*)&res, sizeof(res));
 	if (fileOut.fail())
 		return LRC_ERR_FILE_WRITE;
@@ -364,8 +355,7 @@ int LRCWriter::WriteStreamHeader(uint8_t streamId, Range dataRange)
 		return LRC_ERR_FILE_WRITE;
 
 	// write camera temperature range
-	//float cr[2] { cameraParams.TempRangeMinK, cameraParams.TempRangeMaxK };
-	float cr[2] { 0, 100 };
+	float cr[2] { cameraParams.tempRangeMinK, cameraParams.tempRangeMaxK };
 	fileOut.write((char*)&cr, sizeof(cr));
 	if (fileOut.fail())
 		return LRC_ERR_FILE_WRITE;
@@ -393,7 +383,7 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
 
 	// write rows before rect
-	err = WriteZeros(valueSize * width * dataRect.y);
+	err = WriteZeros(valueSize * cameraParams.width * dataRect.y);
 	if (LRC_FAILED(err))
 		return err;
 
@@ -432,13 +422,13 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 		}
 
 		// write columns after rect
-		err = WriteZeros(valueSize * (width - dataRect.width - dataRect.x));
+		err = WriteZeros(valueSize * (cameraParams.width - dataRect.width - dataRect.x));
 		if (LRC_FAILED(err))
 			return err;
 	}
 
 	// write rows after rect
-	err = WriteZeros(valueSize * width * (height - dataRect.height - dataRect.y));
+	err = WriteZeros(valueSize * cameraParams.width * (cameraParams.height - dataRect.height - dataRect.y));
 	if (LRC_FAILED(err))
 		return err;
 
@@ -459,7 +449,7 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
 
 	// write rows before rect
-	err = WriteZeros(valueSize * width * dataRect.y);
+	err = WriteZeros(valueSize * cameraParams.width * dataRect.y);
 	if (LRC_FAILED(err))
 		return err;
 
@@ -495,13 +485,13 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 		}
 
 		// write columns after rect
-		err = WriteZeros(valueSize * (width - dataRect.width - dataRect.x));
+		err = WriteZeros(valueSize * (cameraParams.width - dataRect.width - dataRect.x));
 		if (LRC_FAILED(err))
 			return err;
 	}
 
 	// write rows after rect
-	err = WriteZeros(valueSize * width * (height - dataRect.height - dataRect.y));
+	err = WriteZeros(valueSize * cameraParams.width * (cameraParams.height - dataRect.height - dataRect.y));
 	if (LRC_FAILED(err))
 		return err;
 

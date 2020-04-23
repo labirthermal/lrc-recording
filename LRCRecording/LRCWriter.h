@@ -163,13 +163,12 @@ protected:
 	/// Writes data to first stream of next frame.
 	/// </summary>
 	/// <param name="data">Data array of frame.</param>
-	/// <param name="dataType">The frame data type.</param>
 	/// <param name="streamId">Id of stream that will be written.</param>
 	/// <param name="rect">Rectangle where parameter data should be written.</param>
 	/// <param name="dataRange">Range of data.</param>
 	/// <param name="dateTime">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <returns>Returns an error code.</returns>
-	int WriteFrame(void* data, FrameDataType dataType, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
+	int WriteFrame(void* data, uint8_t streamId, Int32Rect rect, Range dataRange, uint64_t dateTime) override;
 
 #pragma region Write methods
 

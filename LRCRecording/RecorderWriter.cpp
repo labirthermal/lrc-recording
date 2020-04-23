@@ -25,22 +25,20 @@ RecorderWriter::~RecorderWriter()
 /// Records a single frame.
 /// </summary>
 /// <param name="data">The frame data.</param>
-/// <param name="dataType">The frame data type.</param>
-/// <param name="width">The frame width.</param>
-/// <param name="height">The frame height.</param>
+/// <param name="cameraParams">The camera parameters describing the frame data type and resolution.</param>
 /// <param name="fileName">The recording file name.</param>
 /// <returns>Returns an error code.</returns>
-int RecorderWriter::RecordSingleFrame(void* data, FrameDataType dataType, uint16_t width, uint16_t height, string fileName)
+int RecorderWriter::RecordSingleFrame(void* data, CameraParameters cameraParams, string fileName)
 {
 	int err;
 
 	// open the file
-	err = StartRecordingManually(fileName, width, height);
+	err = StartRecordingManually(fileName, cameraParams);
 	if (LRC_FAILED(err))
 		return err;
 
 	// record the frame
-	err = RecordFrame(data, dataType);
+	err = RecordFrame(data);
 	if (LRC_FAILED(err))
 		return err;
 	
@@ -58,10 +56,9 @@ int RecorderWriter::RecordSingleFrame(void* data, FrameDataType dataType, uint16
 /// Call Close or Dispose method when recording is done.
 /// </remarks>
 /// <param name="fileName">Output file name.</param>
-/// <param name="width">Width of frames.</param>
-/// <param name="height">Height of frames.</param>
+/// <param name="cameraParams">The camera parameters describing the frame data type and resolution.</param>
 /// <returns>Returns an error code.</returns>
-int RecorderWriter::StartRecordingManually(string fileName, uint16_t width, uint16_t height)
+int RecorderWriter::StartRecordingManually(string fileName, CameraParameters cameraParams)
 {
 	// check recording is not already running
 	if (fileOut.is_open())
@@ -71,9 +68,8 @@ int RecorderWriter::StartRecordingManually(string fileName, uint16_t width, uint
 	frameCount = 0;
 	nextFrameIndex = 0;
 
-	// store the resolution
-	this->width = width;
-	this->height = height;
+	// store the camera parameters
+	this->cameraParams = cameraParams;
 
 	// open the output file
 	int err = OpenFileWithSuffix(fileName);
@@ -91,19 +87,18 @@ int RecorderWriter::StartRecordingManually(string fileName, uint16_t width, uint
 /// Use this method if writing whole new frame of completely rewriting existing frame (including header).
 /// </summary>
 /// <param name="data">Frame data.</param>
-/// <param name="dataType">The frame data type.</param>
 /// <param name="streamId">Stream ID.</param>
 /// <param name="dataRect">Rectangle where data should be written. If null, entire temperature resolution is expected. Parameter data should have save size as this rectangle.</param>
 /// <param name="range">Range of data values. If null, the range will be calculated.</param>
 /// <param name="frameTimestamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 /// <returns>Returns an error code.</returns>
-int RecorderWriter::RecordFrame(void* data, FrameDataType dataType, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
+int RecorderWriter::RecordFrame(void* data, char streamId, Int32Rect dataRect, Range range, uint64_t frameTimestamp)
 {
 	int err;
 
 	// if no data rectangle is specified, make it across the whole frame
 	if (dataRect.IsEmpty())
-		dataRect = Int32Rect(0, 0, width, height);
+		dataRect = Int32Rect(0, 0, cameraParams.width, cameraParams.height);
 	// if no time stamp is specified, record the current time
 	if (!frameTimestamp)
 		frameTimestamp = DateTime::Now();
@@ -133,7 +128,7 @@ int RecorderWriter::RecordFrame(void* data, FrameDataType dataType, char streamI
 	// if no range was specified, find the data range
 	if (range.IsEmpty())
 	{
-		switch (dataType)
+		switch (cameraParams.dataType)
 		{
 		case FrameDataType::Float:
 			UpdateDataRange((float*)data, dataRect.width * dataRect.height, &range);
@@ -149,7 +144,7 @@ int RecorderWriter::RecordFrame(void* data, FrameDataType dataType, char streamI
 	}
 
 	// record the frame
-	err = WriteFrame(data, dataType, streamId, dataRect, range, frameTimestamp);
+	err = WriteFrame(data, streamId, dataRect, range, frameTimestamp);
 	if (LRC_FAILED(err))
 		return err;
 
@@ -542,8 +537,8 @@ bool RecorderWriter::CheckRectSize(uint16_t dataWidth, uint16_t dataHeight, Int3
 {
 	return rect.x >= 0	// rect is inside frame
 		&& rect.y >= 0	// rect is inside frame
-		&& rect.x + rect.width <= this->width	// rect fits inside frame
-		&& rect.y + rect.height <= this->height	// rect fits inside frame
+		&& rect.x + rect.width <= cameraParams.width	// rect fits inside frame
+		&& rect.y + rect.height <= cameraParams.height	// rect fits inside frame
 		&& dataWidth >= rect.width		// data cover entire rect
 		&& dataHeight >= rect.height;	// data cover entire rect
 }

@@ -262,15 +262,29 @@ struct ObjectParameters
 struct CameraParameters
 {
 	/// <summary>
+	/// The data type.
+	/// </summary>
+	FrameDataType dataType;
+
+	/// <summary>
 	/// The camera resolution.
 	/// </summary>
 	uint16_t width, height;
+
+	/// <summary>
+	/// Camera measuring range in Kelvin.
+	/// </summary>
+	float tempRangeMinK, tempRangeMaxK;
 
 	/// <summary>
 	/// Initialises the camera parameters.
 	/// </summary>
 	CameraParameters()
 	{
+		dataType = FrameDataType::Float;
 		width = height = 0;
+		// FLIR Lepton default measuring range (in high gain mode)
+		tempRangeMinK = -10 + 273.15f;
+		tempRangeMaxK = 140 + 273.15f;
 	}
 };

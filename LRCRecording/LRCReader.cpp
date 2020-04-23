@@ -186,7 +186,7 @@ void LRCReader::CalculateSizes()
 			8 * sizeof(float) + sizeof(uint8_t); // stream header object parameters
 
 		// calculate stream size
-		streamSizes[i] = streamHeaderSizes[i] + dataTypeSize * GetWidth() * GetHeight();
+		streamSizes[i] = streamHeaderSizes[i] + dataTypeSize * cameraParams.width * cameraParams.height;
 	}
 
 	// calculate the whole frame size
@@ -298,9 +298,12 @@ int LRCReader::ReadFileHeader()
 	}
 
 	// read the camera resolution
-	fileIn.read((char*)&cameraParams, 2 * sizeof(uint16_t));	// do not use sizeof(CameraParameters), there may be more variables
+	uint16_t res[2];
+	fileIn.read((char*)&res, sizeof(res));
 	if (fileIn.fail())
 		return LRC_ERR_FILE_READ;
+	cameraParams.width = res[0];
+	cameraParams.height = res[1];
 
 	// read flags indicating optional fields
 	uint32_t headerFlags;
@@ -415,7 +418,8 @@ int LRCReader::ReadStreamHeader()
 	fileIn.read((char*)cr, sizeof(cr));
 	if (fileIn.fail())
 		return LRC_ERR_FILE_READ;
-	// the camera range is not stored anywhere now
+	cameraParams.tempRangeMinK = cr[0];
+	cameraParams.tempRangeMaxK = cr[1];
 
 	// read the object parameters
 	fileIn.read((char*)&objectParams, 8 * sizeof(float) + sizeof(bool));	// do not use sizeof(ObjectParameters), there are some additional constants

@@ -60,30 +60,38 @@ void GenerateData(uint16_t* buff, int count)
 /// </summary>
 void RecordImage()
 {
+	// create the camera parameters
+	CameraParameters cameraParams;
+	cameraParams.width = Width;
+	cameraParams.height = Height;
+
 	// create the stream info
 	LRCCommon::StreamInfo stream;
 	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
 	stream.objectParams = ObjectParameters();
 
-	// generate some data
 #ifdef DATA_TYPE_FLOAT
+	cameraParams.dataType = FrameDataType::Float;
 	// temperatures in degrees Celsius
 	stream.units = TemperatureSourceUnits::Celsius;
-	// temperatures stored as float
-	FrameDataType dataType = FrameDataType::Float;
-	// generate data
+	// allocate memory for data
 	float data[Width * Height];
-	GenerateData(data, Width * Height);
 #endif
 #ifdef DATA_TYPE_UINT16
+	cameraParams.dataType = FrameDataType::UInt16;
+	// set the camera range as the range of uint16
+	cameraParams.tempRangeMinK = 0;
+	cameraParams.tempRangeMaxK = UINT16_MAX;
 	// raw intensities
 	stream.units = TemperatureSourceUnits::Intensity;
 	// intensities stored as uint16
 	FrameDataType dataType = FrameDataType::UInt16;
-	// generate data
+	// allocate memory for data
 	uint16_t data[Width * Height];
-	GenerateData(data, Width * Height);
 #endif
+
+	// generate some data
+	GenerateData(data, Width * Height);
 
 	// create the writer
 	LRCWriter writer(&stream, 1, NULL, 0);
@@ -92,7 +100,7 @@ void RecordImage()
 	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
 
 	// record one image
-	int err = writer.RecordSingleFrame(data, dataType, Width, Height, FileName);
+	int err = writer.RecordSingleFrame(data, cameraParams, FileName);
 	if (LRC_FAILED(err))
 		printf("Recording image failed with error %d.\n", err);
 }
@@ -105,6 +113,11 @@ string RecordSequence()
 {
 	int err;
 
+	// create the camera parameters
+	CameraParameters cameraParams;
+	cameraParams.width = Width;
+	cameraParams.height = Height;
+
 	// create the stream info
 	LRCCommon::StreamInfo stream;
 	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
@@ -112,17 +125,22 @@ string RecordSequence()
 
 	// create buffer for data
 #ifdef DATA_TYPE_FLOAT
+	cameraParams.dataType = FrameDataType::Float;
 	// temperatures in degrees Celsius
 	stream.units = TemperatureSourceUnits::Celsius;
-	// temperatures stored as float
-	FrameDataType dataType = FrameDataType::Float;
+	// allocate memory for data
 	float data[Width * Height];
 #endif
 #ifdef DATA_TYPE_UINT16
+	cameraParams.dataType = FrameDataType::UInt16;
+	// set the camera range as the range of uint16
+	cameraParams.tempRangeMinK = 0;
+	cameraParams.tempRangeMaxK = UINT16_MAX;
 	// raw intensities
 	stream.units = TemperatureSourceUnits::Intensity;
 	// intensities stored as uint16
 	FrameDataType dataType = FrameDataType::UInt16;
+	// allocate memory for data
 	uint16_t data[Width * Height];
 #endif
 
@@ -139,7 +157,7 @@ string RecordSequence()
 	//writer.SetRecordingSuffix(RecorderWriter::RecordingSuffix::Timestamp);
 
 	// start recording
-	err = writer.StartRecordingManually(FileName, Width, Height);
+	err = writer.StartRecordingManually(FileName, cameraParams);
 	if (LRC_FAILED(err))
 	{
 		printf("Recording sequence failed with error code %d.\n", err);
@@ -156,7 +174,7 @@ string RecordSequence()
 		extDevices[0]->SetBinaryData(extDevData);
 		
 		// record a frame
-		err = writer.RecordFrame(data, dataType);
+		err = writer.RecordFrame(data);
 		if (LRC_FAILED(err))
 		{
 			printf("Recording frame failed with error code %d.\n", err);
