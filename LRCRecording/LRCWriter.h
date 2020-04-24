@@ -216,17 +216,19 @@ private:
 	/// Writes float temperature data to the file.
 	/// </summary>
 	/// <param name="data">The temperature data (in degrees Celsius) to write.</param>
+	/// <param name="streamId">Id of stream that will be written.</param>
 	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
 	/// <returns>Returns an error code.</returns>
-	int WriteFrameData(float* data, Int32Rect dataRect, Range dataRange);
+	int WriteFrameData(float* data, uint8_t streamId, Int32Rect dataRect, Range dataRange);
 
 	/// <summary>
 	/// Writes uint16 raw data to the file.
 	/// </summary>
 	/// <param name="data">The temperature data (type uint16) to write.</param>
+	/// <param name="streamId">Id of stream that will be written.</param>
 	/// <param name="dataRect">Rectangle where to write this temperature array.</param>
 	/// <returns>Returns an error code.</returns>
-	int WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange);
+	int WriteFrameData(uint16_t* data, uint8_t streamId, Int32Rect dataRect, Range dataRange);
 
 #pragma endregion
 	

@@ -176,11 +176,11 @@ int LRCWriter::WriteFrame(void* data, uint8_t streamId, Int32Rect rect, Range da
 	switch (cameraParams.dataType)
 	{
 	case CameraDataType::Float:
-		err = WriteFrameData((float*)data, rect, dataRange);
+		err = WriteFrameData((float*)data, streamId, rect, dataRange);
 		break;
 
 	case CameraDataType::UInt16:
-		err = WriteFrameData((uint16_t*)data, rect, dataRange);
+		err = WriteFrameData((uint16_t*)data, streamId, rect, dataRange);
 		break;
 
 	default:
@@ -388,14 +388,15 @@ int LRCWriter::WriteStreamHeader(uint8_t streamId, Range dataRange)
 /// Writes float temperature data to the file.
 /// </summary>
 /// <param name="data">The temperature data (type float) to write.</param>
+/// <param name="streamId">Id of stream that will be written.</param>
 /// <param name="dataRect">Rectangle where to write this temperature array.</param>
 /// <returns>Returns an error code.</returns>
-int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
+int LRCWriter::WriteFrameData(float* data, uint8_t streamId, Int32Rect dataRect, Range dataRange)
 {
 	int err;
 
 	// get the size of one data element
-	int valueSize = LRCCommon::FileDataTypeSize(streams[0].dataType);
+	int valueSize = LRCCommon::FileDataTypeSize(streams[streamId].dataType);
 
 	// write rows before rect
 	err = WriteZeros(valueSize * cameraParams.width * dataRect.y);
@@ -415,7 +416,7 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 			return err;
 
 		// write data inside rect
-		switch (streams[0].dataType)
+		switch (streams[streamId].dataType)
 		{
 		case LRCCommon::FileDataType::UInt16Float:
 			// float saved as uint16
@@ -460,14 +461,15 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 /// Writes uint16 raw data to the file.
 /// </summary>
 /// <param name="data">The temperature data (type uint16) to write.</param>
+/// <param name="streamId">Id of stream that will be written.</param>
 /// <param name="dataRect">Rectangle where to write this temperature array.</param>
 /// <returns>Returns an error code.</returns>
-int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRange)
+int LRCWriter::WriteFrameData(uint16_t* data, uint8_t streamId, Int32Rect dataRect, Range dataRange)
 {
 	int err;
 
 	// get the size of one data element
-	int valueSize = LRCCommon::FileDataTypeSize(streams[0].dataType);
+	int valueSize = LRCCommon::FileDataTypeSize(streams[streamId].dataType);
 
 	// write rows before rect
 	err = WriteZeros(valueSize * cameraParams.width * dataRect.y);
@@ -482,7 +484,7 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 			return err;
 
 		// write data inside rect
-		switch (streams[0].dataType)
+		switch (streams[streamId].dataType)
 		{
 		case LRCCommon::FileDataType::UInt16Float:
 			// uint16 cannot be saved as "uint16 converted from float"
