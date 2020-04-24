@@ -22,22 +22,7 @@ TemperatureSource::TemperatureSource()
 /// </summary>
 TemperatureSource::~TemperatureSource()
 {
-	// free the temperature data array
-	if (data)
-		delete[] data;
-}
-
-/// <summary>
-/// Allocates the temperature data array according to the camera parameters.
-/// </summary>
-void TemperatureSource::AllocateData()
-{
-	// free the previous array if any
-	if (data)
-		delete[] data;
-
-	// allocate the new array
-	data = new float[cameraParams.width * cameraParams.height];
+	// data is a void*, the array will be managed by a derived class
 }
 
 /// <summary>

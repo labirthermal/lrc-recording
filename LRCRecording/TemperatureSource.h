@@ -14,7 +14,7 @@ protected:
 	/// <summary>
 	/// The temperature data.
 	/// </summary>
-	float* data;
+	void* data;
 
 	/// <summary>
 	/// The data range.
@@ -54,7 +54,7 @@ public:
 	/// <param name="range">The data range.</param>
 	/// <param name="timeStamp">The frame UTC time stamp in milliseconds since 1.1.1970.</param>
 	/// <param name="userData">User data object. Set when registering the callback.</param>
-	typedef void (*NewDataCallback)(float* data, Range* range, uint64_t timeStamp, void* userData);
+	typedef void (*NewDataCallback)(void* data, Range* range, uint64_t timeStamp, void* userData);
 
 private:
 	/// <summary>
@@ -84,7 +84,7 @@ protected:
 	/// <summary>
 	/// Allocates the temperature data array according to the camera parameters.
 	/// </summary>
-	virtual void AllocateData();
+	virtual void AllocateData() = 0;
 
 	/// <summary>
 	/// Ensures processing new temperature data, calls the new data callback.
@@ -107,7 +107,7 @@ public:
 	/// <summary>
 	/// Gets a pointer to the temperature data array. The data are stored in row major format.
 	/// </summary>
-	float* GetTemperatureData() { return data; }
+	void* GetTemperatureData() { return data; }
 
 	/// <summary>
 	/// Gets a pointer to the temperature data range.

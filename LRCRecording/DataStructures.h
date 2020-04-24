@@ -17,7 +17,7 @@ enum TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, 
 /// <summary>
 /// Camera data types. The recorder may save it to a file as a different type.
 /// </summary>
-enum CameraDataType : uint8_t { Float, UInt16 };
+enum CameraDataType : uint8_t { Float, UInt16, Unknown = 255 };
 
 
 

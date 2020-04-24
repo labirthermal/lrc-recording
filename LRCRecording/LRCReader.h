@@ -21,9 +21,14 @@ private:
 	ifstream fileIn;
 
 	/// <summary>
-	/// Buffer for reading uint16 data.
+	/// Memory for float frame data.
 	/// </summary>
-	uint16_t* uint16buff = NULL;
+	float* floatData = NULL;
+
+	/// <summary>
+	/// Memory for uint16 frame data.
+	/// </summary>
+	uint16_t* uint16Data = NULL;
 
 	/// <summary>
 	/// The note to the current frame.
@@ -118,6 +123,11 @@ protected:
 	/// </summary>
 	void AllocateData() override;
 
+	/// <summary>
+	/// Sets which data to output (which data type).
+	/// </summary>
+	void SetOutputData();
+
 public:
 	/// <summary>
 	/// Gets the name of the source file.
@@ -134,6 +144,17 @@ public:
 	/// Gets the external devices in the LRC file. Map key is the device ID.
 	/// </summary>
 	map<uint8_t, IExternalDevice*> GetExternalDevices() { return externalDevices; }
+
+	/// <summary>
+	/// Gets the camera data type of the currently selected stream.
+	/// </summary>
+	CameraDataType GetStreamDataType();
+
+	/// <summary>
+	/// Sets the selected stream index.
+	/// </summary>
+	/// <returns>Returns an error code.</returns>
+	int SetSelectedStreamIndex(uint8_t value) override;
 
 	/// <summary>
 	/// Gets whether this reader can seek to an arbitrary frame.

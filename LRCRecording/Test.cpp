@@ -208,7 +208,7 @@ string RecordSequence()
 /// <param name="range">Frame data range.</param>
 /// <param name="timeStamp">Frame UTC time stamp in milliseconds since 1.1.1970.</param>
 /// <param name="userData">User data object. Set when registering the callback.</param>
-void NewFrameCallback(float* data, Range* range, uint64_t timeStamp, void* userData)
+void NewFrameCallback(void* data, Range* range, uint64_t timeStamp, void* userData)
 {
 	printf("Frame read: min %f, max %f\n", range->min, range->max);
 }
@@ -241,6 +241,19 @@ int main()
 	reader.RegisterNewDataCallback(&NewFrameCallback, NULL);
 	// open the recording
 	reader.Open(recordingName);
+	// determine data type
+	// the first frame has already been read by Open, perhaps register the NewFrameCallback later and re-read the first frame
+	printf("Recording data type is ");
+	switch (reader.GetStreamDataType())
+	{
+	case CameraDataType::Float:
+		printf("float.\n");
+		break;
+
+	case CameraDataType::UInt16:
+		printf("uint16.\n");
+		break;
+	}
 	// start playback
 	reader.Play();
 	// wait for playback to finish

@@ -121,11 +121,18 @@ void LRCReader::Close()
 		streams = NULL;
 		streamCount = 0;
 	}
-	if (uint16buff)
+	if (floatData)
 	{
-		delete[] uint16buff;
-		uint16buff = NULL;
+		delete[] floatData;
+		floatData = NULL;
 	}
+	if (uint16Data)
+	{
+		delete[] uint16Data;
+		uint16Data = NULL;
+	}
+	// zero out the output data pointer (it was one of floatData or uint16Data)
+	data = NULL;
 
 	// dispose external devices
 	for (map<uint8_t, IExternalDevice*>::iterator it = externalDevices.begin(); it != externalDevices.end(); it++)
@@ -139,14 +146,76 @@ void LRCReader::Close()
 /// </summary>
 void LRCReader::AllocateData()
 {
-	PlayableSource::AllocateData();
+	// free the previous arrays if any
+	if (floatData)
+		delete[] floatData;
+	if (uint16Data)
+		delete[] uint16Data;
 
-	// free the old buffer
-	if (uint16buff)
-		delete[] uint16buff;
+	// allocate the new arrays
+	floatData = new float[cameraParams.width * cameraParams.height];
+	uint16Data = new uint16_t[cameraParams.width * cameraParams.height];
 
-	// allocate buffer for reading unit16 data
-	uint16buff = new uint16_t[cameraParams.width * cameraParams.height];
+	// set the correct array for output
+	SetOutputData();
+}
+
+/// <summary>
+/// Sets which data to output (which data type).
+/// </summary>
+void LRCReader::SetOutputData()
+{
+	switch (GetStreamDataType())
+	{
+	case CameraDataType::Float:
+		data = floatData;
+		break;
+
+	case CameraDataType::UInt16:
+		data = uint16Data;
+		break;
+
+	default:
+		data = NULL;
+	}
+}
+
+/// <summary>
+/// Gets the camera data type of the currently selected stream.
+/// </summary>
+CameraDataType LRCReader::GetStreamDataType()
+{
+	switch (streams[selectedStreamIndex].dataType)
+	{
+	case LRCCommon::FileDataType::UInt16Float:
+	case LRCCommon::FileDataType::Float:
+		return CameraDataType::Float;
+		// theoretically, if uint16 data have been saved as float (doesn't make much sense, but it's possible),
+		// we will read them as floats, not converted back to uint16
+
+	case LRCCommon::FileDataType::UInt16Raw:
+		return CameraDataType::UInt16;
+
+	default:
+		return CameraDataType::Unknown;
+	}
+}
+
+/// <summary>
+/// Sets the selected stream index.
+/// </summary>
+/// <returns>Returns an error code.</returns>
+int LRCReader::SetSelectedStreamIndex(uint8_t value)
+{
+	// call the parent method
+	int err = PlayableSource::SetSelectedStreamIndex(value);
+	if (LRC_FAILED(err))
+		return err;
+
+	// update which data array to output
+	SetOutputData();
+
+	return LRC_ERR_SUCCESS;
 }
 
 /// <summary>
@@ -461,33 +530,31 @@ int LRCReader::GetFrame()
 	case LRCCommon::FileDataType::UInt16Float:
 		{
 		// read float saved as uint16
-		fileIn.read((char*)uint16buff, pixelCount * sizeof(uint16_t));
+		fileIn.read((char*)uint16Data, pixelCount * sizeof(uint16_t));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
 		// decode from uint16 to actual temperatures
 		double rangeLength = range.GetLength();
 		for (int i = 0; i < pixelCount; i++)
-			data[i] = (float)(((double)uint16buff[i] / UINT16_MAX) * rangeLength + range.min);
+			floatData[i] = (float)(((double)uint16Data[i] / UINT16_MAX) * rangeLength + range.min);
 		}
 		break;
 
 	case LRCCommon::FileDataType::Float:
 		// read float as float
-		fileIn.read((char*)data, pixelCount * sizeof(float));
+		fileIn.read((char*)floatData, pixelCount * sizeof(float));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
+		// theoretically, if uint16 data have been saved as float (doesn't make much sense, but it's possible),
+		// we will read them as floats, not converted back to uint16
 		break;
 
 	case LRCCommon::FileDataType::UInt16Raw:
-		/*
 		// read uint16 as uint16
-		fileIn.read((char*)data, pixelCount * sizeof(uint16_t));
+		fileIn.read((char*)uint16Data, pixelCount * sizeof(uint16_t));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
 		break;
-		*/
-		// not supported
-		return LRC_ERR_FRAME_DATA_TYPE;
 	}
 
 	// seek to the next frame
