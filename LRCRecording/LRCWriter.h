@@ -28,6 +28,16 @@ private:
 	long frameSize;
 
 	/// <summary>
+	/// Buffer for writing float data to a file.
+	/// </summary>
+	float* floatBuff = NULL;
+
+	/// <summary>
+	/// Buffer for writing uint16 data to a file.
+	/// </summary>
+	uint16_t* uint16Buff = NULL;
+
+	/// <summary>
 	/// List of streams in this file with their temperature sources and unit types.
 	/// </summary>
 	LRCCommon::StreamInfo* streams = NULL;

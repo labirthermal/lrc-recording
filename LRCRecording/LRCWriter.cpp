@@ -37,11 +37,19 @@ LRCWriter::LRCWriter(LRCCommon::StreamInfo* streams, int streamCount, IExternalD
 /// </summary>
 LRCWriter::~LRCWriter()
 {
+	// free writing buffers
+	if (floatBuff != NULL)
+		delete[] floatBuff;
+	if (uint16Buff != NULL)
+		delete[] uint16Buff;
+
+	// free stream size information
 	if (streamSizes)
 		delete[] streamSizes;
 	if (streamHeaderSizes)
 		delete[] streamHeaderSizes;
 
+	// free streams and external devices
 	if (streams)
 		delete[] streams;
 	if (externalDevices)
@@ -113,6 +121,12 @@ void LRCWriter::CalculateSizes()
 
 		// sum the stream sizes
 		streamSizesSum += streamSizes[i];
+
+		// allocate writing buffer if necessary
+		if (streams[i].dataType == LRCCommon::FileDataType::Float && cameraParams.dataType == CameraDataType::UInt16 && floatBuff == NULL)
+			floatBuff = new float[cameraParams.width];
+		if (streams[i].dataType == LRCCommon::FileDataType::UInt16Float && cameraParams.dataType == CameraDataType::Float && uint16Buff == NULL)
+			uint16Buff = new uint16_t[cameraParams.width];
 	}
 
 	// calculate frame size
@@ -388,7 +402,11 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 	if (LRC_FAILED(err))
 		return err;
 
+	// get the temperature range length
 	double dataRangeLength = dataRange.GetLength();
+	if (dataRangeLength <= 0)
+		return LRC_ERR_INVALID_VALUE;
+
 	for (int i = 0; i < dataRect.height; i++)
 	{
 		// write columns before rect
@@ -400,17 +418,15 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 		switch (streams[0].dataType)
 		{
 		case LRCCommon::FileDataType::UInt16Float:
+			// float saved as uint16
+			// stretch the current data range over uint16 range
 			for (int j = 0; j < dataRect.width; j++)
-			{
-				// float saved as uint16, the current data range is stretched over uint16 range
-				uint16_t u = 0;
-				if (dataRangeLength > 0)
-					u = (uint16_t)((*data - dataRange.min) / dataRangeLength * UINT16_MAX);
-				fileOut.write((char*)&u, sizeof(uint16_t));
-				if (fileOut.fail())
-					return LRC_ERR_FILE_WRITE;
-				data++;
-			}
+				uint16Buff[j] = (uint16_t)((*data - dataRange.min) / dataRangeLength * UINT16_MAX);
+			// write the buffer
+			fileOut.write((char*)&uint16Buff, dataRect.width * sizeof(uint16_t));
+			if (fileOut.fail())
+				return LRC_ERR_FILE_WRITE;
+			data += dataRect.width;
 			break;
 
 		case LRCCommon::FileDataType::Float:
@@ -473,15 +489,15 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 			return LRC_ERR_FRAME_DATA_TYPE;
 
 		case LRCCommon::FileDataType::Float:
+			// uint16 saved as float (doesn't make much sense, but make it possible)
+			// copy uint16 data to a float buffer
 			for (int j = 0; j < dataRect.width; j++)
-			{
-				// uint16 saved as float (doesn't make much sense, but make it possible)
-				float f = *data;
-				fileOut.write((char*)&f, sizeof(float));
-				if (fileOut.fail())
-					return LRC_ERR_FILE_WRITE;
-				data++;
-			}
+				floatBuff[j] = data[j];
+			// write the float buffer
+			fileOut.write((char*)&floatBuff, dataRect.width * sizeof(float));
+			if (fileOut.fail())
+				return LRC_ERR_FILE_WRITE;
+			data += dataRect.width;
 			break;
 
 		case LRCCommon::FileDataType::UInt16Raw:

@@ -74,7 +74,7 @@
 // Error reading from file
 #define LRC_ERR_FILE_READ		21
 
-// Attempted to set an invalid value (this error code is returned by setters)
+// Attempted to set an invalid value
 #define LRC_ERR_INVALID_VALUE	22
 
 // Recording end, the player tried to read after the last frame
