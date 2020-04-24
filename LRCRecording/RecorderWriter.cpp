@@ -130,11 +130,11 @@ int RecorderWriter::RecordFrame(void* data, char streamId, Int32Rect dataRect, R
 	{
 		switch (cameraParams.dataType)
 		{
-		case FrameDataType::Float:
+		case CameraDataType::Float:
 			UpdateDataRange((float*)data, dataRect.width * dataRect.height, &range);
 			break;
 
-		case FrameDataType::UInt16:
+		case CameraDataType::UInt16:
 			UpdateDataRange((uint16_t*)data, dataRect.width * dataRect.height, &range);
 			break;
 

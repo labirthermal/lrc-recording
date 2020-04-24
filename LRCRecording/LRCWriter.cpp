@@ -97,7 +97,8 @@ void LRCWriter::CalculateSizes()
 	long streamSizesSum = 0;
 	for (int i = 0; i < streamCount; i++)
 	{
-		int dataTypeSize = streams[i].dataType == LRCCommon::FileDataType::UInt16 ? sizeof(uint16_t) : sizeof(float);
+		// determine data element size
+		int dataTypeSize = LRCCommon::FileDataTypeSize(streams[i].dataType);
 
 		// calculate stream header size
 		streamHeaderSizes[i] =
@@ -160,11 +161,11 @@ int LRCWriter::WriteFrame(void* data, uint8_t streamId, Int32Rect rect, Range da
 	// overwrite stream data
 	switch (cameraParams.dataType)
 	{
-	case FrameDataType::Float:
+	case CameraDataType::Float:
 		err = WriteFrameData((float*)data, rect, dataRange);
 		break;
 
-	case FrameDataType::UInt16:
+	case CameraDataType::UInt16:
 		err = WriteFrameData((uint16_t*)data, rect, dataRange);
 		break;
 
@@ -380,7 +381,7 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 	int err;
 
 	// get the size of one data element
-	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
+	int valueSize = LRCCommon::FileDataTypeSize(streams[0].dataType);
 
 	// write rows before rect
 	err = WriteZeros(valueSize * cameraParams.width * dataRect.y);
@@ -398,7 +399,7 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 		// write data inside rect
 		switch (streams[0].dataType)
 		{
-		case LRCCommon::FileDataType::UInt16:
+		case LRCCommon::FileDataType::UInt16Float:
 			for (int j = 0; j < dataRect.width; j++)
 			{
 				// float saved as uint16, the current data range is stretched over uint16 range
@@ -419,6 +420,10 @@ int LRCWriter::WriteFrameData(float* data, Int32Rect dataRect, Range dataRange)
 				return LRC_ERR_FILE_WRITE;
 			data += dataRect.width;
 			break;
+
+		case LRCCommon::FileDataType::UInt16Raw:
+			// float cannot be saved as uint16 raw
+			return LRC_ERR_FRAME_DATA_TYPE;
 		}
 
 		// write columns after rect
@@ -446,7 +451,7 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 	int err;
 
 	// get the size of one data element
-	int valueSize = streams[0].dataType == LRCCommon::FileDataType::Float ? sizeof(float) : sizeof(uint16_t);
+	int valueSize = LRCCommon::FileDataTypeSize(streams[0].dataType);
 
 	// write rows before rect
 	err = WriteZeros(valueSize * cameraParams.width * dataRect.y);
@@ -463,13 +468,9 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 		// write data inside rect
 		switch (streams[0].dataType)
 		{
-		case LRCCommon::FileDataType::UInt16:
-			// uint16 saved as uint16 (without any range stretching)
-			fileOut.write((char*)data, dataRect.width * sizeof(uint16_t));
-			if (fileOut.fail())
-				return LRC_ERR_FILE_WRITE;
-			data += dataRect.width;
-			break;
+		case LRCCommon::FileDataType::UInt16Float:
+			// uint16 cannot be saved as "uint16 converted from float"
+			return LRC_ERR_FRAME_DATA_TYPE;
 
 		case LRCCommon::FileDataType::Float:
 			for (int j = 0; j < dataRect.width; j++)
@@ -481,6 +482,14 @@ int LRCWriter::WriteFrameData(uint16_t* data, Int32Rect dataRect, Range dataRang
 					return LRC_ERR_FILE_WRITE;
 				data++;
 			}
+			break;
+
+		case LRCCommon::FileDataType::UInt16Raw:
+			// uint16 saved as uint16
+			fileOut.write((char*)data, dataRect.width * sizeof(uint16_t));
+			if (fileOut.fail())
+				return LRC_ERR_FILE_WRITE;
+			data += dataRect.width;
 			break;
 		}
 

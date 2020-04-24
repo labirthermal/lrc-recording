@@ -176,8 +176,8 @@ void LRCReader::CalculateSizes()
 	streamSizes = new long[streamCount];
 	for (int i = 0; i < streamCount; i++)
 	{
-		// determine data type size
-		int dataTypeSize = streams[i].dataType == LRCCommon::FileDataType::UInt16 ? sizeof(uint16_t) : sizeof(float);
+		// determine data element size
+		int dataTypeSize = LRCCommon::FileDataTypeSize(streams[i].dataType);
 
 		// calculate stream header size
 		streamHeaderSizes[i] =
@@ -458,9 +458,9 @@ int LRCReader::GetFrame()
 	int pixelCount = cameraParams.width * cameraParams.height;
 	switch (streams[selectedStreamIndex].dataType)
 	{
-	case LRCCommon::FileDataType::UInt16:
+	case LRCCommon::FileDataType::UInt16Float:
 		{
-		// read uint16 data
+		// read float saved as uint16
 		fileIn.read((char*)uint16buff, pixelCount * sizeof(uint16_t));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
@@ -472,11 +472,22 @@ int LRCReader::GetFrame()
 		break;
 
 	case LRCCommon::FileDataType::Float:
-		// read float data
+		// read float as float
 		fileIn.read((char*)data, pixelCount * sizeof(float));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
 		break;
+
+	case LRCCommon::FileDataType::UInt16Raw:
+		/*
+		// read uint16 as uint16
+		fileIn.read((char*)data, pixelCount * sizeof(uint16_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
+		break;
+		*/
+		// not supported
+		return LRC_ERR_FRAME_DATA_TYPE;
 	}
 
 	// seek to the next frame

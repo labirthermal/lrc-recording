@@ -15,9 +15,9 @@ enum TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, 
 
 
 /// <summary>
-/// Frame data types. This is the input data type. The recorder may save it to a file as a different type according to its settings.
+/// Camera data types. The recorder may save it to a file as a different type.
 /// </summary>
-enum FrameDataType : uint8_t { Float, UInt16 };
+enum CameraDataType : uint8_t { Float, UInt16 };
 
 
 
@@ -264,7 +264,7 @@ struct CameraParameters
 	/// <summary>
 	/// The data type.
 	/// </summary>
-	FrameDataType dataType;
+	CameraDataType dataType;
 
 	/// <summary>
 	/// The camera resolution.
@@ -281,7 +281,7 @@ struct CameraParameters
 	/// </summary>
 	CameraParameters()
 	{
-		dataType = FrameDataType::Float;
+		dataType = CameraDataType::Float;
 		width = height = 0;
 		// FLIR Lepton default measuring range (in high gain mode)
 		tempRangeMinK = -10 + 273.15f;

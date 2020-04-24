@@ -10,7 +10,7 @@ const uint16_t Width = 160;
 const uint16_t Height = 120;
 const string FileName = "recording.lrc";
 
-// the data type to test
+// the camera (source) data type to test
 #define DATA_TYPE_FLOAT
 //#define DATA_TYPE_UINT16
 
@@ -67,25 +67,28 @@ void RecordImage()
 
 	// create the stream info
 	LRCCommon::StreamInfo stream;
-	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
 	stream.objectParams = ObjectParameters();
 
 #ifdef DATA_TYPE_FLOAT
-	cameraParams.dataType = FrameDataType::Float;
+	// camera source data type
+	cameraParams.dataType = CameraDataType::Float;
+	// file target data type
+	stream.dataType = LRCCommon::FileDataType::UInt16Float;
 	// temperatures in degrees Celsius
 	stream.units = TemperatureSourceUnits::Celsius;
 	// allocate memory for data
 	float data[Width * Height];
 #endif
 #ifdef DATA_TYPE_UINT16
-	cameraParams.dataType = FrameDataType::UInt16;
+	// camera source data type
+	cameraParams.dataType = CameraDataType::UInt16;
 	// set the camera range as the range of uint16
 	cameraParams.tempRangeMinK = 0;
 	cameraParams.tempRangeMaxK = UINT16_MAX;
+	// file target data type
+	stream.dataType = LRCCommon::FileDataType::UInt16Raw;
 	// raw intensities
 	stream.units = TemperatureSourceUnits::Intensity;
-	// intensities stored as uint16
-	FrameDataType dataType = FrameDataType::UInt16;
 	// allocate memory for data
 	uint16_t data[Width * Height];
 #endif
@@ -120,26 +123,29 @@ string RecordSequence()
 
 	// create the stream info
 	LRCCommon::StreamInfo stream;
-	stream.dataType = LRCCommon::FileDataType::UInt16;	// output type
 	stream.objectParams = ObjectParameters();
 
 	// create buffer for data
 #ifdef DATA_TYPE_FLOAT
-	cameraParams.dataType = FrameDataType::Float;
+	// camera source data type
+	cameraParams.dataType = CameraDataType::Float;
+	// file target data type
+	stream.dataType = LRCCommon::FileDataType::UInt16Float;
 	// temperatures in degrees Celsius
 	stream.units = TemperatureSourceUnits::Celsius;
 	// allocate memory for data
 	float data[Width * Height];
 #endif
 #ifdef DATA_TYPE_UINT16
-	cameraParams.dataType = FrameDataType::UInt16;
+	// camera source data type
+	cameraParams.dataType = CameraDataType::UInt16;
 	// set the camera range as the range of uint16
 	cameraParams.tempRangeMinK = 0;
 	cameraParams.tempRangeMaxK = UINT16_MAX;
+	// file target data type
+	stream.dataType = LRCCommon::FileDataType::UInt16Raw;
 	// raw intensities
 	stream.units = TemperatureSourceUnits::Intensity;
-	// intensities stored as uint16
-	FrameDataType dataType = FrameDataType::UInt16;
 	// allocate memory for data
 	uint16_t data[Width * Height];
 #endif
