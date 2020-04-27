@@ -148,7 +148,7 @@ public:
 	/// <summary>
 	/// Gets the camera data type of the currently selected stream.
 	/// </summary>
-	CameraDataType GetStreamDataType();
+	CameraDataType GetSelectedStreamDataType();
 
 	/// <summary>
 	/// Sets the selected stream index.

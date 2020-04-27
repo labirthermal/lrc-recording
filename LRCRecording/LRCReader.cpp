@@ -148,13 +148,46 @@ void LRCReader::AllocateData()
 {
 	// free the previous arrays if any
 	if (floatData)
+	{
 		delete[] floatData;
+		floatData = NULL;
+	}
 	if (uint16Data)
+	{
 		delete[] uint16Data;
+		uint16Data = NULL;
+	}
 
-	// allocate the new arrays
-	floatData = new float[cameraParams.width * cameraParams.height];
-	uint16Data = new uint16_t[cameraParams.width * cameraParams.height];
+	// calculate the number of pixels in frame
+	int pixelCount = cameraParams.width * cameraParams.height;
+
+	// inspect the streams in the file
+	for (int i = 0; i < streamCount; i++)
+	{
+		// allocate reading buffers as necessary
+		switch (streams[i].dataType)
+		{
+		case LRCCommon::FileDataType::UInt16Float:
+			// both arrays are necessary for reading uint16 and converting to float
+			if (uint16Data == NULL)
+				uint16Data = new uint16_t[pixelCount];
+			if (floatData == NULL)
+				floatData = new float[pixelCount];
+			break;
+
+		case LRCCommon::FileDataType::Float:
+			// float array for reading float data
+			if (floatData == NULL)
+				floatData = new float[pixelCount];
+			break;
+
+		case LRCCommon::FileDataType::UInt16Raw:
+			// uint16 array for reading uint16 data
+			if (uint16Data == NULL)
+				uint16Data = new uint16_t[pixelCount];
+			break;
+		}
+	}
 
 	// set the correct array for output
 	SetOutputData();
@@ -165,7 +198,7 @@ void LRCReader::AllocateData()
 /// </summary>
 void LRCReader::SetOutputData()
 {
-	switch (GetStreamDataType())
+	switch (GetSelectedStreamDataType())
 	{
 	case CameraDataType::Float:
 		data = floatData;
@@ -183,7 +216,7 @@ void LRCReader::SetOutputData()
 /// <summary>
 /// Gets the camera data type of the currently selected stream.
 /// </summary>
-CameraDataType LRCReader::GetStreamDataType()
+CameraDataType LRCReader::GetSelectedStreamDataType()
 {
 	switch (streams[selectedStreamIndex].dataType)
 	{

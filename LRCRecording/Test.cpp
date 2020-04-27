@@ -244,7 +244,7 @@ int main()
 	// determine data type
 	// the first frame has already been read by Open, perhaps register the NewFrameCallback later and re-read the first frame
 	printf("Recording data type is ");
-	switch (reader.GetStreamDataType())
+	switch (reader.GetSelectedStreamDataType())
 	{
 	case CameraDataType::Float:
 		printf("float.\n");
