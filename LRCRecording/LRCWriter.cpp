@@ -403,11 +403,6 @@ int LRCWriter::WriteFrameData(float* data, uint8_t streamId, Int32Rect dataRect,
 	if (LRC_FAILED(err))
 		return err;
 
-	// get the temperature range length
-	double dataRangeLength = dataRange.GetLength();
-	if (dataRangeLength <= 0)
-		return LRC_ERR_INVALID_VALUE;
-
 	for (int i = 0; i < dataRect.height; i++)
 	{
 		// write columns before rect
@@ -419,15 +414,21 @@ int LRCWriter::WriteFrameData(float* data, uint8_t streamId, Int32Rect dataRect,
 		switch (streams[streamId].dataType)
 		{
 		case LRCCommon::FileDataType::UInt16Float:
+			{
 			// float saved as uint16
+			// calculate the stretch from the temperature range to uint16 range
+			if (dataRange.GetLength() <= 0)
+				return LRC_ERR_INVALID_VALUE;
+			double stretchFactor = UINT16_MAX / dataRange.GetLength();
 			// stretch the current data range over uint16 range
 			for (int j = 0; j < dataRect.width; j++)
-				uint16Buff[j] = (uint16_t)((*data - dataRange.min) / dataRangeLength * UINT16_MAX);
+				uint16Buff[j] = (uint16_t)((data[j] - dataRange.min) * stretchFactor);
 			// write the buffer
-			fileOut.write((char*)&uint16Buff, dataRect.width * sizeof(uint16_t));
+			fileOut.write((char*)uint16Buff, dataRect.width * sizeof(uint16_t));
 			if (fileOut.fail())
 				return LRC_ERR_FILE_WRITE;
 			data += dataRect.width;
+			}
 			break;
 
 		case LRCCommon::FileDataType::Float:
@@ -496,7 +497,7 @@ int LRCWriter::WriteFrameData(uint16_t* data, uint8_t streamId, Int32Rect dataRe
 			for (int j = 0; j < dataRect.width; j++)
 				floatBuff[j] = data[j];
 			// write the float buffer
-			fileOut.write((char*)&floatBuff, dataRect.width * sizeof(float));
+			fileOut.write((char*)floatBuff, dataRect.width * sizeof(float));
 			if (fileOut.fail())
 				return LRC_ERR_FILE_WRITE;
 			data += dataRect.width;

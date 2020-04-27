@@ -533,10 +533,11 @@ int LRCReader::GetFrame()
 		fileIn.read((char*)uint16Data, pixelCount * sizeof(uint16_t));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
+		// calculate the stretch from uint16 range to the actual temperature range
+		double stretchFactor = range.GetLength() / UINT16_MAX;
 		// decode from uint16 to actual temperatures
-		double rangeLength = range.GetLength();
 		for (int i = 0; i < pixelCount; i++)
-			floatData[i] = (float)(((double)uint16Data[i] / UINT16_MAX) * rangeLength + range.min);
+			floatData[i] = (float)(uint16Data[i] * stretchFactor + range.min);
 		}
 		break;
 
