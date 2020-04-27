@@ -30,6 +30,10 @@ LRCWriter::LRCWriter(LRCCommon::StreamInfo* streams, int streamCount, IExternalD
 	this->extDevCount = extDevCount;
 
 //	DynamicHeaderInfo = new SortedDictionary<FileHeaderInfo, object>();
+
+	// allocate memory for stream info
+	streamHeaderSizes = new long[streamCount];
+	streamSizes = new long[streamCount];
 }
 
 /// <summary>
@@ -37,11 +41,7 @@ LRCWriter::LRCWriter(LRCCommon::StreamInfo* streams, int streamCount, IExternalD
 /// </summary>
 LRCWriter::~LRCWriter()
 {
-	// free writing buffers
-	if (floatBuff != NULL)
-		delete[] floatBuff;
-	if (uint16Buff != NULL)
-		delete[] uint16Buff;
+	Close();
 
 	// free stream size information
 	if (streamSizes)
@@ -82,6 +82,26 @@ int LRCWriter::OpenFileWithSuffix(string fileName)
 }
 
 /// <summary>
+/// Closes the file being recorded.
+/// </summary>
+void LRCWriter::Close()
+{
+	// free writing buffers
+	if (floatBuff != NULL)
+	{
+		delete[] floatBuff;
+		floatBuff = NULL;
+	}
+	if (uint16Buff != NULL)
+	{
+		delete[] uint16Buff;
+		uint16Buff = NULL;
+	}
+
+	RecorderWriter::Close();
+}
+
+/// <summary>
 /// Calculate block sizes from current setting.
 /// </summary>
 void LRCWriter::CalculateSizes()
@@ -100,8 +120,6 @@ void LRCWriter::CalculateSizes()
 		sumDataSize += externalDevices[i]->GetDataSize();
 	frameHeaderSize += sumDataSize + sizeof(uint8_t) * extDevCount;	// data of external devices
 
-	streamHeaderSizes = new long[streamCount];
-	streamSizes = new long[streamCount];
 	long streamSizesSum = 0;
 	for (int i = 0; i < streamCount; i++)
 	{

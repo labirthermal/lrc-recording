@@ -162,6 +162,12 @@ protected:
 	/// <returns>Returns an error code.</returns>
 	int OpenFileWithSuffix(string fileName) override;
 
+public:
+	/// <summary>
+	/// Closes the file being recorded.
+	/// </summary>
+	void Close() override;
+
 private:
 	/// <summary>
 	/// Calculate block sizes from current setting.
