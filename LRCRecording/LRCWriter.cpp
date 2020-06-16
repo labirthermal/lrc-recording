@@ -82,6 +82,21 @@ int LRCWriter::OpenFileWithSuffix(string fileName)
 }
 
 /// <summary>
+/// Sets the object parameters for the given stream.
+/// </summary>
+/// <param name="objectParams">The object parameters to set.</param>
+/// <param name="streamId">The stream for which to set the parameters.</param>
+/// <returns>Returns an error code.</returns>
+int LRCWriter::SetObjectParams(ObjectParameters objectParams, uint8_t streamId)
+{
+	if (streamId >= streamCount)
+		return LRC_ERR_STREAM_INDEX_OUT;
+
+	streams[streamId].objectParams = objectParams;
+	return LRC_ERR_SUCCESS;
+}
+
+/// <summary>
 /// Closes the file being recorded.
 /// </summary>
 void LRCWriter::Close()

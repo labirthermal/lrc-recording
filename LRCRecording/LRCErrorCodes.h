@@ -79,3 +79,6 @@
 
 // Recording end, the player tried to read after the last frame
 #define LRC_ERR_REC_END			23
+
+// Stream index out of range
+#define LRC_ERR_STREAM_INDEX_OUT	24

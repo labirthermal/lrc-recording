@@ -164,6 +164,14 @@ protected:
 
 public:
 	/// <summary>
+	/// Sets the object parameters for the given stream.
+	/// </summary>
+	/// <param name="objectParams">The object parameters to set.</param>
+	/// <param name="streamId">The stream for which to set the parameters.</param>
+	/// <returns>Returns an error code.</returns>
+	int SetObjectParams(ObjectParameters objectParams, uint8_t streamId);
+
+	/// <summary>
 	/// Closes the file being recorded.
 	/// </summary>
 	void Close() override;
