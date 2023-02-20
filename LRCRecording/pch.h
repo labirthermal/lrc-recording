@@ -11,10 +11,6 @@
 
 #include "LRCRecordingAPI.h"
 
-//#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-// Windows Header Files
-//#include <windows.h>
-
 #include <cstdio>
 #include <string>
 #include <fstream>
@@ -22,20 +18,9 @@
 #include <cfloat>
 #include <cmath>
 #include <sys/stat.h>
-
-#ifdef WIN32
-	#include <sys/timeb.h>
-#else
-	#include <sys/time.h>
-#endif
-
-#ifdef WIN32
-	#include <direct.h>
-	#include "include/dirent.h"
-#else
-	#include <dirent.h>
-#endif
-
+#include <sys/timeb.h>
+#include <direct.h>
+#include "include/dirent.h"
 #include <regex>
 #include <mutex>
 #include <condition_variable>

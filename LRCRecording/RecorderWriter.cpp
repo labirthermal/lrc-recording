@@ -411,12 +411,8 @@ int RecorderWriter::EnsureDirectory(string fileName)
 		if (dir.size() > 0)
 		{
 			// create the directory
-#ifdef WIN32
 			int mdret = _mkdir(dir.c_str());
-#else
-			mode_t mode = 0755;
-			int mdret = mkdir(dir.c_str(), mode);
-#endif
+
 			// check errors, if the directory already exists, it's not an error
 			if (mdret && errno != EEXIST)
 				return LRC_ERR_CREATE_DIR;
