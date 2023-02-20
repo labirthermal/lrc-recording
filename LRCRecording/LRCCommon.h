@@ -1,13 +1,13 @@
 #pragma once
 
-#include "stdafx.h"
+#include "pch.h"
 #include "DataStructures.h"
 #include "ExternalDevice.h"
 
 /// <summary>
 /// Common things for LRC reader and writer.
 /// </summary>
-class LRCCommon
+class LRCRECORDING_API LRCCommon
 {
 public:
 	/// <summary>

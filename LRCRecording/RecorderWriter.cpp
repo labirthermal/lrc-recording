@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "pch.h"
 #include "RecorderWriter.h"
 
 using namespace std;
@@ -357,9 +357,10 @@ string RecorderWriter::AppendTimestampToFileName(string fileName)
 
 	// construct the time stamp
 	time_t timeSec = DateTime::Now() / 1000;
-	tm* timeLoc = localtime(&timeSec);
+	tm timeLoc;
+	localtime_s(&timeLoc, &timeSec);
 	char timestamp[32];
-	strftime(timestamp, sizeof(timestamp), TimestampFormat.c_str(), timeLoc);
+	strftime(timestamp, sizeof(timestamp), TimestampFormat.c_str(), &timeLoc);
 	// insert the time stamp
 	string result = fileName;
 	result.insert(lastDot, timestamp);

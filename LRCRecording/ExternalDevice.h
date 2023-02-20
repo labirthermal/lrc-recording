@@ -1,11 +1,12 @@
 #pragma once
+#include "pch.h"
 
 using namespace std;
 
 /// <summary>
 /// External device providing additional data to recorded frames.
 /// </summary>
-class IExternalDevice
+class LRCRECORDING_API IExternalDevice
 {
 public:
 	/// <summary>
@@ -40,7 +41,7 @@ public:
 
 
 
-class BasicExternalDevice : public IExternalDevice
+class LRCRECORDING_API BasicExternalDevice : public IExternalDevice
 {
 protected:
 	/// <summary>

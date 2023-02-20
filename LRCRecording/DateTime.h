@@ -1,10 +1,10 @@
 #pragma once
-#include "stdafx.h"
+#include "pch.h"
 
 /// <summary>
 /// Holds date and time information. Provides methods for conversion.
 /// </summary>
-class DateTime
+class LRCRECORDING_API DateTime
 {
 private:
 	/// <summary>

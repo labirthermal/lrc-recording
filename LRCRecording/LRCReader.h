@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pch.h"
 #include "PlayableSource.h"
 #include "LRCCommon.h"
 #include "DateTime.h"
@@ -7,7 +8,7 @@
 /// <summary>
 /// Reads LabIR recording files.
 /// </summary>
-class LRCReader : public PlayableSource
+class LRCRECORDING_API LRCReader : public PlayableSource
 {
 private:
 	/// <summary>

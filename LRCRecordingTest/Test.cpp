@@ -3,8 +3,10 @@
 //
 
 #include "stdafx.h"
-#include "LRCWriter.h"
 #include "LRCReader.h"
+#include "LRCWriter.h"
+
+using namespace std;
 
 const uint16_t Width = 160;
 const uint16_t Height = 120;

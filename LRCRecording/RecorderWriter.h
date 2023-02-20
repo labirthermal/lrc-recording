@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "pch.h"
 #include "LRCErrorCodes.h"
 #include "DataStructures.h"
 #include "DateTime.h"
@@ -12,7 +13,7 @@ using namespace std;
 /// <summary>
 /// Writes temperature data to a file.
 /// </summary>
-class RecorderWriter
+class LRCRECORDING_API RecorderWriter
 {
 public:
 	/// <summary>

@@ -1,10 +1,11 @@
 #pragma once
+#include "pch.h"
 #include "TemperatureSource.h"
 
 /// <summary>
 /// Base class for every offline temperature source (from file).
 /// </summary>
-class OfflineSource : public TemperatureSource
+class LRCRECORDING_API OfflineSource : public TemperatureSource
 {
 public:
 	/// <summary>

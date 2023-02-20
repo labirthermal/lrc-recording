@@ -3,28 +3,28 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include "pch.h"
 
 using namespace std;
 
 /// <summary>
 /// Types of units for writing temperatures to file.
 /// </summary>
-enum TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, Radians };
+enum LRCRECORDING_API TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, Radians };
 
 
 
 /// <summary>
 /// Camera data types. The recorder may save it to a file as a different type.
 /// </summary>
-enum CameraDataType : uint8_t { Float, UInt16, Unknown = 255 };
+enum LRCRECORDING_API CameraDataType : uint8_t { Float, UInt16, Unknown = 255 };
 
 
 
 /// <summary>
 /// Rectangle with integer coordinates.
 /// </summary>
-struct Int32Rect
+struct LRCRECORDING_API Int32Rect
 {
 	int x, y, width, height;
 
@@ -67,7 +67,7 @@ struct Int32Rect
 /// <summary>
 /// Range of values, i.e., minimum and maximum.
 /// </summary>
-struct Range
+struct LRCRECORDING_API Range
 {
 	/// <summary>
 	/// The range bounds.
@@ -127,7 +127,7 @@ struct Range
 /// <summary>
 /// Object parameters.
 /// </summary>
-struct ObjectParameters
+struct LRCRECORDING_API ObjectParameters
 {
 	/// <summary>
 	/// Object emissivity.
@@ -259,7 +259,7 @@ struct ObjectParameters
 /// <summary>
 /// Camera parameters.
 /// </summary>
-struct CameraParameters
+struct LRCRECORDING_API CameraParameters
 {
 	/// <summary>
 	/// The data type.

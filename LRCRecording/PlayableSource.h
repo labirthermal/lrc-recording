@@ -1,11 +1,12 @@
 #pragma once
 
+#include "pch.h"
 #include "OfflineSource.h"
 
 /// <summary>
 /// Temperature source capable of data playback.
 /// </summary>
-class PlayableSource : public OfflineSource
+class LRCRECORDING_API PlayableSource : public OfflineSource
 {
 protected:
 	/// <summary>

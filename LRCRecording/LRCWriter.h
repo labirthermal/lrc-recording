@@ -3,13 +3,14 @@
 
 #pragma once
 
+#include "pch.h"
 #include "RecorderWriter.h"
 #include "LRCCommon.h"
 
 /// <summary>
 /// Class for creating LabIR specific sequence files.
 /// </summary>
-class LRCWriter : public RecorderWriter
+class LRCRECORDING_API LRCWriter : public RecorderWriter
 {
 private:
 	/// <summary>

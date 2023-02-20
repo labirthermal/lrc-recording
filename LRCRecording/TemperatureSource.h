@@ -2,13 +2,14 @@
 
 #pragma once
 
+#include "pch.h"
 #include "LRCErrorCodes.h"
 #include "DataStructures.h"
 
 /// <summary>
 /// Base class for temperature data sources.
 /// </summary>
-class TemperatureSource
+class LRCRECORDING_API TemperatureSource
 {
 protected:
 	/// <summary>
