@@ -10,21 +10,21 @@ using namespace std;
 /// <summary>
 /// Types of units for writing temperatures to file.
 /// </summary>
-enum LRCRECORDING_API TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, Radians };
+enum TemperatureSourceUnits : uint8_t { None, Intensity, Celsius, Kelvin, Time, Radians };
 
 
 
 /// <summary>
 /// Camera data types. The recorder may save it to a file as a different type.
 /// </summary>
-enum LRCRECORDING_API CameraDataType : uint8_t { Float, UInt16, Unknown = 255 };
+enum CameraDataType : uint8_t { Float, UInt16, Unknown = 255 };
 
 
 
 /// <summary>
 /// Rectangle with integer coordinates.
 /// </summary>
-struct LRCRECORDING_API Int32Rect
+struct Int32Rect
 {
 	int x, y, width, height;
 
@@ -67,7 +67,7 @@ struct LRCRECORDING_API Int32Rect
 /// <summary>
 /// Range of values, i.e., minimum and maximum.
 /// </summary>
-struct LRCRECORDING_API Range
+struct Range
 {
 	/// <summary>
 	/// The range bounds.
@@ -127,7 +127,7 @@ struct LRCRECORDING_API Range
 /// <summary>
 /// Object parameters.
 /// </summary>
-struct LRCRECORDING_API ObjectParameters
+struct ObjectParameters
 {
 	/// <summary>
 	/// Object emissivity.
@@ -259,7 +259,7 @@ struct LRCRECORDING_API ObjectParameters
 /// <summary>
 /// Camera parameters.
 /// </summary>
-struct LRCRECORDING_API CameraParameters
+struct CameraParameters
 {
 	/// <summary>
 	/// The data type.
