@@ -169,6 +169,7 @@
     <ClInclude Include="LRCErrorCodes.h" />
     <ClInclude Include="LRCReader.h" />
     <ClInclude Include="LRCRecordingAPI.h" />
+    <ClInclude Include="LRCRecordingWrapper.h" />
     <ClInclude Include="LRCWriter.h" />
     <ClInclude Include="OfflineSource.h" />
     <ClInclude Include="pch.h" />
@@ -182,6 +183,7 @@
     <ClCompile Include="ExternalDevice.cpp" />
     <ClCompile Include="LRCCommon.cpp" />
     <ClCompile Include="LRCReader.cpp" />
+    <ClCompile Include="LRCRecordingWrapper.cpp" />
     <ClCompile Include="LRCWriter.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
