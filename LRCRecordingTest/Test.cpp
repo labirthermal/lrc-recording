@@ -221,6 +221,8 @@ void NewFrameCallback(void* data, Range* range, uint64_t timeStamp, void* userDa
 /// </summary>
 int main()
 {
+	int err;
+
 	// save an image
 	printf("Saving image...\n");
 	RecordImage();
@@ -241,8 +243,15 @@ int main()
 	LRCReader reader;
 	// register callback for processing frames
 	reader.RegisterNewDataCallback(&NewFrameCallback, NULL);
+
 	// open the recording
-	reader.Open(recordingName);
+	err = reader.Open(recordingName);
+	if (LRC_FAILED(err))
+	{
+		printf("Error %d opening the recording.", err);
+		return err;
+	}
+	
 	// determine data type
 	// the first frame has already been read by Open, perhaps register the NewFrameCallback later and re-read the first frame
 	printf("Recording data type is ");
@@ -262,7 +271,7 @@ int main()
 	while (reader.IsPlaying())
 		Sleep(100);
 	// check playback result
-	int err = reader.GetPlaybackThreadResult();
+	err = reader.GetPlaybackThreadResult();
 	if (LRC_FAILED(err) && err != LRC_ERR_REC_END)
 		printf("Playback failed with error code %d.\n", err);
 	// finished
