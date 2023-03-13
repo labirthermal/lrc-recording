@@ -39,8 +39,6 @@ int LRCReader::Open(string fileName)
 	if (fileIn.fail())
 		return LRC_ERR_FILE_OPEN;
 
-	//DynamicHeaderInfo = new SortedDictionary<FileHeaderInfo, object>();
-
 	// read file header
 	err = ReadFileHeader();
 	if (LRC_FAILED(err))
@@ -133,6 +131,12 @@ void LRCReader::Close()
 	}
 	// zero out the output data pointer (it was one of floatData or uint16Data)
 	data = NULL;
+
+	// dispose the dynamic header information
+	for (map<LRCCommon::FileHeaderInfoFlags, void*>::iterator it = dynamicHeaderInfo.begin(); it != dynamicHeaderInfo.end(); it++)
+		if (it->second != NULL)
+			delete it->second;
+	dynamicHeaderInfo.clear();
 
 	// dispose external devices
 	for (map<uint8_t, IExternalDevice*>::iterator it = externalDevices.begin(); it != externalDevices.end(); it++)
@@ -261,11 +265,9 @@ void LRCReader::CalculateSizes()
 
 	// frame time stamp
 	frameHeaderSize = sizeof(int64_t);
-	/* frame note not supported
 	// frame note
-	if (DynamicHeaderInfo.ContainsKey(FileHeaderInfo.FrameNoteLengthBytes))
-		FrameHeaderSize += (UInt16)DynamicHeaderInfo[FileHeaderInfo.FrameNoteLengthBytes];
-	*/
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes)
+		frameHeaderSize += *(uint16_t*)dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes];
 
 	// calculate the size of external device IDs and data
 	int sumDataSize = 0;
@@ -295,6 +297,43 @@ void LRCReader::CalculateSizes()
 	frameSize = frameHeaderSize;
 	for (int i = 0; i < streamCount; i++)
 		frameSize += streamSizes[i];
+}
+
+/// <summary>
+/// Reads a string from the file.
+/// </summary>
+/// <param name="length">If positive, specifies the number of bytes to read. If zero or negative, reads one byte and uses that as the length.</param>
+/// <returns>Returns the string.</returns>
+Expected<string> LRCReader::ReadString(int length)
+{
+	// if the string length is not specified
+	if (length <= 0)
+	{
+		// read the string length
+		char lengthFromFile;
+		fileIn.read(&lengthFromFile, sizeof(char));
+		if (fileIn.fail())
+			return Expected<string>::Failed(LRC_ERR_FILE_READ);
+		length = lengthFromFile;
+	}
+
+	// read the string bytes
+	char* buff = new char[length];
+	fileIn.read(buff, length);
+	if (fileIn.fail())
+		return Expected<string>::Failed(LRC_ERR_FILE_READ);
+
+	// apparently it's not possible to convert a UTF-8 string to an ANSI string directly
+	// convert UTF-8 to ANSI wide
+	wchar_t* buffAnsiWide = new wchar_t[length];
+	int lengthWide = MultiByteToWideChar(CP_UTF8, 0, buff, length, buffAnsiWide, length);
+	// convert ANSI wide to ANSI narrow
+	char* buffAnsi = new char[length];
+	int lengthNarrow = WideCharToMultiByte(CP_ACP, 0, buffAnsiWide, lengthWide, buffAnsi, length, NULL, NULL);
+	string s(buffAnsi, lengthNarrow);
+
+	delete[] buff, buffAnsiWide, buffAnsi;
+	return Expected<string>(s);
 }
 
 /// <summary>
@@ -361,16 +400,9 @@ int LRCReader::ReadFileHeader()
 			if (fileIn.fail())
 				return LRC_ERR_FILE_READ;
 			// device name
-			char nameLength;
-			fileIn.read(&nameLength, sizeof(char));
-			if (fileIn.fail())
-				return LRC_ERR_FILE_READ;
-			char* nameChr = new char[nameLength + 1];
-			fileIn.read(nameChr, nameLength);
-			if (fileIn.fail())
-				return LRC_ERR_FILE_READ;
-			string name(nameChr, nameLength);
-			delete[] nameChr;
+			Expected<string> name = ReadString();
+			if (!name.HasValue())
+				return name.error;
 			// device data size
 			uint16_t dataSize;
 			fileIn.read((char*)&dataSize, sizeof(uint16_t));
@@ -378,7 +410,7 @@ int LRCReader::ReadFileHeader()
 				return LRC_ERR_FILE_READ;
 
 			// create a basic device
-			externalDevices.insert(pair<uint8_t, IExternalDevice*>(id, new BasicExternalDevice(name, dataSize)));
+			externalDevices.insert(pair<uint8_t, IExternalDevice*>(id, new BasicExternalDevice(name.value, dataSize)));
 		}
 		break;
 
@@ -408,27 +440,100 @@ int LRCReader::ReadFileHeader()
 	cameraParams.height = res[1];
 
 	// read flags indicating optional fields
-	uint32_t headerFlags;
 	fileIn.read((char*)&headerFlags, sizeof(uint32_t));
 	if (fileIn.fail())
 		return LRC_ERR_FILE_READ;
-	// optional fields are not supported
-	if (headerFlags > 0)
-		return LRC_ERR_OPTIONAL_DATA;
 
-	/*
-	foreach(var flag in HeaderFlags.ToValues())
+#pragma region Reading dynamic header information
+	// read the dynamic header information
+	// most of the information are strings, read them in a loop
+	LRCCommon::FileHeaderInfoFlags stringFlags1[] =
 	{
-		if (LRCFileData.StringFlags.Contains(flag))
-			DynamicHeaderInfo[flag] = fileIn.ReadString();
-		else if (LRCFileData.UInt16Flags.Contains(flag))
-			DynamicHeaderInfo[flag] = fileIn.ReadUInt16();
-		else if (LRCFileData.DateTimeFlags.Contains(flag))
-			DynamicHeaderInfo[flag] = DateTime.FromBinary(fileIn.ReadInt64());
+		LRCCommon::FileHeaderInfoFlags::RecordingName,
+		LRCCommon::FileHeaderInfoFlags::RecordingLocation,
+		LRCCommon::FileHeaderInfoFlags::RecordingClient,
+		LRCCommon::FileHeaderInfoFlags::OperatorName,
+		LRCCommon::FileHeaderInfoFlags::OperatorContact,
+		LRCCommon::FileHeaderInfoFlags::OperatorQualification,
+		LRCCommon::FileHeaderInfoFlags::CameraName,
+		LRCCommon::FileHeaderInfoFlags::CameraAperture,
+		LRCCommon::FileHeaderInfoFlags::CameraFilter,
+	};
+	for (LRCCommon::FileHeaderInfoFlags flag : stringFlags1)
+		if (headerFlags & flag)
+		{
+			Expected<string> str = ReadString();
+			if (!str.HasValue())
+				return str.error;
+			dynamicHeaderInfo[flag] = new string(str.value);
+		}
+
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::CameraWavelength)
+	{
+		uint16_t wavelength;
+		fileIn.read((char*)&wavelength, sizeof(uint16_t));
 		if (fileIn.fail())
 			return LRC_ERR_FILE_READ;
+		dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::CameraWavelength] = new uint16_t(wavelength);
 	}
-	*/
+
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::CameraIntegrationTime)
+	{
+		uint16_t integTime;
+		fileIn.read((char*)&integTime, sizeof(uint16_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
+		dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::CameraIntegrationTime] = new uint16_t(integTime);
+	}
+	
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::CalibrationDate)
+	{
+		int64_t binTime;
+		fileIn.read((char*)&binTime, sizeof(int64_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
+		dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::CalibrationDate] = new uint64_t(DateTime::TimeFromBinary(binTime));
+	}
+	
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::FileNote)
+	{
+		Expected<string> str = ReadString();
+		if (!str.HasValue())
+			return str.error;
+		dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::FileNote] = new string(str.value);
+	}
+	
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes)
+	{
+		uint16_t noteLength;
+		fileIn.read((char*)&noteLength, sizeof(uint16_t));
+		if (fileIn.fail())
+			return LRC_ERR_FILE_READ;
+		dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes] = new uint16_t(noteLength);
+	}
+
+	LRCCommon::FileHeaderInfoFlags stringFlags2[] =
+	{
+		LRCCommon::FileHeaderInfoFlags::CheckedDevices,
+		LRCCommon::FileHeaderInfoFlags::OperationalConditions,
+		LRCCommon::FileHeaderInfoFlags::EnvironmentAttenuation,
+		LRCCommon::FileHeaderInfoFlags::EnvironmentConditions,
+		LRCCommon::FileHeaderInfoFlags::AllWindowFilterInfo,
+		LRCCommon::FileHeaderInfoFlags::SpecialConditions,
+		LRCCommon::FileHeaderInfoFlags::MaxAndMeasuredLoad,
+	};
+	for (LRCCommon::FileHeaderInfoFlags flag : stringFlags2)
+		if (headerFlags & flag)
+		{
+			Expected<string> str = ReadString();
+			if (!str.HasValue())
+				return str.error;
+			dynamicHeaderInfo[flag] = new string(str.value);
+		}
+
+	if (fileIn.fail())
+		return LRC_ERR_FILE_READ;
+#pragma endregion
 
 	return LRC_ERR_SUCCESS;
 }
@@ -446,16 +551,20 @@ int LRCReader::ReadFrameHeader()
 		return LRC_ERR_FILE_READ;
 	frameTimeStamp = DateTime::TimeFromBinary(binTime);
 
-	/* frame notes not supported
 	// if the frame may have a note
-	if (HeaderFlags.HasFlag(FileHeaderInfo.FrameNoteLengthBytes.ToFlag()) && (UInt16)DynamicHeaderInfo[FileHeaderInfo.FrameNoteLengthBytes] > 0)
+	if (headerFlags & LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes)
 	{
-		// read the frame note
-		byte[] noteBytes = fileIn.ReadBytes((UInt16)DynamicHeaderInfo[FileHeaderInfo.FrameNoteLengthBytes]);
-		// decode the bytes, trim trailing nulls
-		FrameNote = RecorderWriter.StringEncoding.GetString(noteBytes).TrimEnd('\0');
+		// get the note length
+		uint16_t noteLength = *(uint16_t*)dynamicHeaderInfo[LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes];
+		if (noteLength > 0)
+		{
+			// read the frame note
+			Expected<string> note = ReadString(noteLength);
+			if (!note.HasValue())
+				return note.error;
+			frameNote = note.value;
+		}
 	}
-	*/
 
 	// read the data of external devices
 	switch (lrcVersion)

@@ -11,9 +11,43 @@ class LRCRECORDING_API LRCCommon
 {
 public:
 	/// <summary>
-	/// LRC file signature.
+	/// Flags indicating the presence of optional information in the file header.
 	/// </summary>
-	static const char FileTypeHeader[4];
+	enum FileHeaderInfoFlags : uint32_t
+	{
+		None					= 0,
+
+		RecordingName			= 1 << 0, // string
+		RecordingLocation		= 1 << 1, // string
+		RecordingClient			= 1 << 2, // string
+
+		OperatorName			= 1 << 3, // string
+		OperatorContact			= 1 << 4, // string
+		OperatorQualification	= 1 << 5, // string
+
+		CameraName				= 1 << 6, // string
+		CameraAperture			= 1 << 7, // string
+		CameraFilter			= 1 << 8, // string
+		CameraWavelength		= 1 << 9, // uint16
+		CameraIntegrationTime	= 1 << 10, // uint16
+		CalibrationDate			= 1 << 11, // datetime
+
+		FileNote				= 1 << 12, // string
+		FrameNoteLengthBytes	= 1 << 13, // uint16
+
+		// standard (ÈSN ISO 18434-1) fields
+		CheckedDevices			= 1 << 14, // string
+		OperationalConditions	= 1 << 15, // string
+
+		// Qualitative check
+		EnvironmentAttenuation	= 1 << 16, // string
+		EnvironmentConditions	= 1 << 17, // string
+		AllWindowFilterInfo		= 1 << 18, // string
+		SpecialConditions		= 1 << 19, // string
+
+		// Quantitative check
+		MaxAndMeasuredLoad		= 1 << 20, // string
+	};
 
 
 
@@ -71,4 +105,12 @@ public:
 		/// </summary>
 		ObjectParameters objectParams;
 	};
+
+
+
+
+	/// <summary>
+	/// LRC file signature.
+	/// </summary>
+	static const char FileTypeHeader[4];
 };

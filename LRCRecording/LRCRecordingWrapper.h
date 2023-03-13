@@ -1,18 +1,10 @@
 #pragma once
 
-//#include "DataStructures.h"
-
 #ifdef LRCRECORDING_EXPORTS
 	#define LRCRECORDING_API_C extern "C" __declspec(dllexport)
 #else
 	#define LRCRECORDING_API_C extern "C" __declspec(dllimport)
 #endif
-
-struct MyRange
-{
-	double min;
-	double max;
-};
 
 /// <summary>
 /// Opens a LRC recording.

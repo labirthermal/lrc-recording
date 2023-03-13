@@ -6,6 +6,65 @@
 #include "DateTime.h"
 
 /// <summary>
+/// Holds a value which might be unavailable due to an error.
+/// </summary>
+/// <typeparam name="T">The type of the value.</typeparam>
+template <typename T>
+struct Expected
+{
+public:
+	/// <summary>
+	/// The value.
+	/// </summary>
+	T value;
+
+	/// <summary>
+	/// The error code.
+	/// </summary>
+	int error;
+
+private:
+	/// <summary>
+	/// Creates an Expected prepared for an error.
+	/// This is a private constructor. Instantiation should be done through the static method Failed.
+	/// </summary>
+	Expected()
+	{
+		// preset some default error, will be overwritten in Failed
+		error = LRC_ERR_GENERAL;
+	}
+
+public:
+	/// <summary>
+	/// Creates an Expected with a valid value.
+	/// </summary>
+	/// <param name="value">The value.</param>
+	Expected(T value)
+	{
+		this->value = value;
+		this->error = LRC_ERR_SUCCESS;
+	}
+
+	/// <summary>
+	/// Creates an Expected with an error.
+	/// </summary>
+	/// <param name="error">The error code.</param>
+	static Expected<T> Failed(int error)
+	{
+		Expected<T> f;
+		f.error = error;
+		return f;
+	}
+
+	/// <summary>
+	/// Checks whether the value is available.
+	/// </summary>
+	bool HasValue() { return LRC_SUCCEEDED(error); }
+};
+
+
+
+/// <summary>
 /// Reads LabIR recording files.
 /// </summary>
 class LRCRECORDING_API LRCReader : public PlayableSource
@@ -71,17 +130,15 @@ private:
 	/// </summary>
 	LRCCommon::StreamInfo* streams = NULL;
 
-	/*
-	/// <summary>
-	/// Values of dynamic part of header.
-	/// </summary>
-	SortedDictionary<FileHeaderInfo, object> DynamicHeaderInfo{ get; set; }
-
 	/// <summary>
 	/// Flags of dynamic header content.
 	/// </summary>
-	FileHeaderInfoFlags HeaderFlags{ get; set; }
-	*/
+	LRCCommon::FileHeaderInfoFlags headerFlags;
+
+	/// <summary>
+	/// Values of dynamic part of header.
+	/// </summary>
+	map<LRCCommon::FileHeaderInfoFlags, void*> dynamicHeaderInfo;
 
 	/// <summary>
 	/// The external devices in the LRC file. The key is the device ID.
@@ -136,10 +193,19 @@ public:
 	string GetSourceFileName() { return sourceFileName; }
 
 	/// <summary>
+	/// Gets the flags of the dynamic header information.
+	/// </summary>
+	LRCCommon::FileHeaderInfoFlags GetHeaderFlags() { return headerFlags; }
+
+	/// <summary>
+	/// Gets the values of the dynamic header information.
+	/// </summary>
+	map<LRCCommon::FileHeaderInfoFlags, void*> GetDynamicHeaderInfo() { return dynamicHeaderInfo; }
+
+	/// <summary>
 	/// Gets the note to the current frame.
 	/// </summary>
-	// frame notes not supported
-	//string GetFrameNote() { return frameNote; }
+	string GetFrameNote() { return frameNote; }
 
 	/// <summary>
 	/// Gets the external devices in the LRC file. Map key is the device ID.
@@ -172,6 +238,13 @@ private:
 	/// Calculates sizes of headers and block from current settings.
 	/// </summary>
 	void CalculateSizes();
+
+	/// <summary>
+	/// Reads a string from the file.
+	/// </summary>
+	/// <param name="length">If positive, specifies the number of bytes to read. If zero or negative, reads one byte and uses that as the length.</param>
+	/// <returns>Returns the string.</returns>
+	Expected<string> ReadString(int length = -1);
 
 	/// <summary>
 	/// Reads data of file header.
