@@ -93,6 +93,39 @@ LRCRECORDING_API_C uint64_t GetDuration()
 }
 
 //
+// Gets the length of the recording note.
+//
+LRCRECORDING_API_C int GetRecordingNoteLength()
+{
+	// if the recording has a note
+	if (reader->GetHeaderFlags() & LRCCommon::FileHeaderInfoFlags::FileNote)
+		return ((string*)reader->GetDynamicHeaderInfo()[LRCCommon::FileHeaderInfoFlags::FileNote])->length() + 1;	// +1 for null terminator
+	else
+		return 0;
+}
+
+//
+/// Gets the text note associated with the recording.
+//
+LRCRECORDING_API_C void GetRecordingNote(char* buff, int length)
+{
+	// check we have a buffer
+	if (buff == NULL || length <= 0)
+		return;
+
+	// if the recording has a note
+	if (reader->GetHeaderFlags() & LRCCommon::FileHeaderInfoFlags::FileNote)
+	{
+		// copy the not to the output buffer
+		string* note = (string*)reader->GetDynamicHeaderInfo()[LRCCommon::FileHeaderInfoFlags::FileNote];
+		strcpy_s(buff, length, note->c_str());
+	}
+	else
+		// no note
+		buff[0] = '\0';
+}
+
+//
 // Gets the object parameters.
 //
 LRCRECORDING_API_C struct ObjectParameters* GetObjectParameters()
@@ -174,6 +207,38 @@ LRCRECORDING_API_C uint64_t GetFrameTimestamp()
 LRCRECORDING_API_C uint64_t GetTimeFromBeginning()
 {
 	return reader->GetFrameTimeFromBeginning();
+}
+
+//
+// Gets the maximum length of the frame note. Not all frames have notes.
+//
+LRCRECORDING_API_C int GetFrameNoteLength()
+{
+	// if frames may have notes
+	if (reader->GetHeaderFlags() & LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes)
+		return *(uint16_t*)reader->GetDynamicHeaderInfo()[LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes] + 1;	// +1 for null terminator
+	else
+		return 0;
+}
+
+//
+// Gets the text note associated with the current frame.
+//
+LRCRECORDING_API_C void GetFrameNote(char* buff, int length)
+{
+	// check we have a buffer
+	if (buff == NULL || length <= 0)
+		return;
+
+	// if the frame has a note
+	if (reader->GetHeaderFlags() & LRCCommon::FileHeaderInfoFlags::FrameNoteLengthBytes)
+	{
+		string note = reader->GetFrameNote();
+		strcpy_s(buff, length, note.c_str());
+	}
+	else
+		// no note
+		buff[0] = '\0';
 }
 
 //

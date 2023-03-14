@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DataStructures.h"
+
 #ifdef LRCRECORDING_EXPORTS
 	#define LRCRECORDING_API_C extern "C" __declspec(dllexport)
 #else
@@ -37,6 +39,19 @@ LRCRECORDING_API_C int GetFrameCount();
 /// Gets the duration of the recording in milliseconds.
 /// </summary>
 LRCRECORDING_API_C uint64_t GetDuration();
+
+/// <summary>
+/// Gets the length of the recording note.
+/// </summary>
+/// <returns>Returns the length in bytes, including the null terminating character.</returns>
+LRCRECORDING_API_C int GetRecordingNoteLength();
+
+/// <summary>
+/// Gets the text note associated with the recording.
+/// </summary>
+/// <param name="buff">A buffer to receive the text.</param>
+/// <param name="length">The buffer length.</param>
+LRCRECORDING_API_C void GetRecordingNote(char* buff, int length);
 
 /// <summary>
 /// Gets the object parameters.
@@ -78,6 +93,19 @@ LRCRECORDING_API_C uint64_t GetFrameTimestamp();
 /// Gets the time in milliseconds of the current frame relative to the first frame.
 /// </summary>
 LRCRECORDING_API_C uint64_t GetTimeFromBeginning();
+
+/// <summary>
+/// Gets the maximum length of the frame note. Not all frames have notes.
+/// </summary>
+/// <returns>Returns the length in bytes, including the null terminating character.</returns>
+LRCRECORDING_API_C int GetFrameNoteLength();
+
+/// <summary>
+/// Gets the text note associated with the current frame.
+/// </summary>
+/// <param name="buff">A buffer to receive the text.</param>
+/// <param name="length">The buffer length.</param>
+LRCRECORDING_API_C void GetFrameNote(char* buff, int length);
 
 /// <summary>
 /// Seeks to a frame at the given index.

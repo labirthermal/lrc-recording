@@ -19,6 +19,14 @@ frameCount = calllib('LRCRecording', 'GetFrameCount');
 duration = calllib('LRCRecording', 'GetDuration');
 fprintf('%d frames, %g s\n', frameCount, duration / 1000)
 
+recNoteLength = calllib('LRCRecording', 'GetRecordingNoteLength');
+tmp = repmat(' ', 1, recNoteLength);
+recNotePtr = libpointer('stringPtr', tmp);
+recNote = calllib('LRCRecording', 'GetRecordingNote', recNotePtr, recNoteLength);
+if size(recNote) > 0
+    fprintf('Recording note: %s\n', recNote)
+end
+
 objectParamsPtr = calllib('LRCRecording', 'GetObjectParameters');
 objectParams = libstruct('ObjectParameters', objectParamsPtr);
 fprintf('emissivity %g, reflected temperature %g C, ...\n', objectParams.emissivity, objectParams.reflectedTempK - 273.15)
@@ -29,6 +37,11 @@ setdatatype(dataPtr, 'singlePtr', width, height)
 % get the pointer to the temperature data range
 rangePtr = calllib('LRCRecording', 'GetDataRange');
 range = libstruct('Range', rangePtr);
+
+% allocate memory for reading frame notes
+frameNoteLength = calllib('LRCRecording', 'GetFrameNoteLength');
+tmp = repmat(' ', 1, frameNoteLength);
+frameNotePtr = libpointer('stringPtr', tmp);
 
 for i = 1:min(3, frameCount)
     % frame index and time
@@ -45,6 +58,12 @@ for i = 1:min(3, frameCount)
     % data range (the pointer is still the same)
     fprintf('temperature range %g-%g C\n', range.min, range.max)
     
+    % note associated with the frame
+    frameNote = calllib('LRCRecording', 'GetFrameNote', frameNotePtr, frameNoteLength);
+    if size(frameNote) > 0
+        fprintf('note: %s\n', frameNote)
+    end
+    
     % advance to the next frame
     % (NextFrame does nothing at the end of recording)
     calllib('LRCRecording', 'NextFrame')
@@ -55,5 +74,5 @@ end
 calllib('LRCRecording', 'Close')
 
 % unload the library
-clear objectParams objectParamsPtr range rangePtr dataPtr
+clear recNotePtr objectParams objectParamsPtr range rangePtr dataPtr recNotePtr
 unloadlibrary('LRCRecording')
