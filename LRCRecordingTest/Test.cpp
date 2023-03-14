@@ -16,6 +16,7 @@ const string FileName = "recording.lrc";
 #define DATA_TYPE_FLOAT
 //#define DATA_TYPE_UINT16
 
+LRCReader reader;
 
 /// <summary>
 /// Generates random data of type float.
@@ -212,7 +213,13 @@ string RecordSequence()
 /// <param name="userData">User data object. Set when registering the callback.</param>
 void NewFrameCallback(void* data, Range* range, uint64_t timeStamp, void* userData)
 {
-	printf("Frame read: min %f, max %f\n", range->min, range->max);
+	printf("Frame read: min %f, max %f", range->min, range->max);
+
+	string note = reader.GetFrameNote();
+	if (!note.empty())
+		printf(", note: %s", note.c_str());
+
+	printf("\n");
 }
 
 /// <summary>
@@ -240,7 +247,6 @@ int main()
 
 	// play back the recorded sequence
 	printf("Opening recorded sequence...\n");
-	LRCReader reader;
 	// register callback for processing frames
 	reader.RegisterNewDataCallback(&NewFrameCallback, NULL);
 

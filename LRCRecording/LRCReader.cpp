@@ -302,10 +302,14 @@ void LRCReader::CalculateSizes()
 /// <summary>
 /// Reads a string from the file.
 /// </summary>
-/// <param name="length">If positive, specifies the number of bytes to read. If zero or negative, reads one byte and uses that as the length.</param>
+/// <param name="length">If positive, specifies the number of bytes to read. If negative, reads one byte and uses that as the length. If zero, returns an error.</param>
 /// <returns>Returns the string.</returns>
 Expected<string> LRCReader::ReadString(int length)
 {
+	// the length cannot be zero
+	if (length == 0)
+		return Expected<string>::Failed(LRC_ERR_INVALID_VALUE);
+
 	// if the string length is not specified
 	if (length <= 0)
 	{
@@ -317,22 +321,27 @@ Expected<string> LRCReader::ReadString(int length)
 		length = lengthFromFile;
 	}
 
+	// the string is fixed length so theoretically it may not be null terminated
+	int lengthPlusNull = length + 1;
+
 	// read the string bytes
-	char* buff = new char[length];
-	fileIn.read(buff, length);
+	char* buffUtf8 = new char[lengthPlusNull];
+	fileIn.read(buffUtf8, length);
 	if (fileIn.fail())
 		return Expected<string>::Failed(LRC_ERR_FILE_READ);
+	// make sure the string is null terminated
+	buffUtf8[length] = '\0';
 
 	// apparently it's not possible to convert a UTF-8 string to an ANSI string directly
 	// convert UTF-8 to ANSI wide
-	wchar_t* buffAnsiWide = new wchar_t[length];
-	int lengthWide = MultiByteToWideChar(CP_UTF8, 0, buff, length, buffAnsiWide, length);
+	wchar_t* buffAnsiWide = new wchar_t[lengthPlusNull];
+	MultiByteToWideChar(CP_UTF8, 0, buffUtf8, -1, buffAnsiWide, lengthPlusNull);
 	// convert ANSI wide to ANSI narrow
-	char* buffAnsi = new char[length];
-	int lengthNarrow = WideCharToMultiByte(CP_ACP, 0, buffAnsiWide, lengthWide, buffAnsi, length, NULL, NULL);
-	string s(buffAnsi, lengthNarrow);
+	char* buffAnsi = new char[lengthPlusNull];
+	WideCharToMultiByte(CP_ACP, 0, buffAnsiWide, -1, buffAnsi, lengthPlusNull, NULL, NULL);
+	string s(buffAnsi);
 
-	delete[] buff, buffAnsiWide, buffAnsi;
+	delete[] buffUtf8, buffAnsiWide, buffAnsi;
 	return Expected<string>(s);
 }
 
