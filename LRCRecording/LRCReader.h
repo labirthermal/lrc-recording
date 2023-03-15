@@ -240,6 +240,12 @@ private:
 	void CalculateSizes();
 
 	/// <summary>
+	/// Reads a 32bit integer from a compressed format.
+	/// </summary>
+	/// <returns>Returns the integer.</returns>
+	Expected<int> Read7BitEncodedInt();
+
+	/// <summary>
 	/// Reads a string from the file.
 	/// </summary>
 	/// <param name="length">If positive, specifies the number of bytes to read. If zero or negative, reads one byte and uses that as the length.</param>

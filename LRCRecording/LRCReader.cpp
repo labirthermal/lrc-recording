@@ -299,6 +299,29 @@ void LRCReader::CalculateSizes()
 		frameSize += streamSizes[i];
 }
 
+//
+// Reads a 32bit integer from a compressed format.
+//
+Expected<int> LRCReader::Read7BitEncodedInt()
+{
+	int result = 0;
+	char shift = 0;
+	char b;
+
+	do
+	{
+		if (shift >= 35)
+			return Expected<int>::Failed(LRC_ERR_FILE_READ);
+
+		fileIn.read(&b, sizeof(char));
+		result |= (b & 0x7F) << shift;
+		shift += 7;
+
+	} while (b & 0x80);
+
+	return Expected<int>(result);
+}
+
 /// <summary>
 /// Reads a string from the file.
 /// </summary>
@@ -314,11 +337,10 @@ Expected<string> LRCReader::ReadString(int length)
 	if (length <= 0)
 	{
 		// read the string length
-		char lengthFromFile;
-		fileIn.read(&lengthFromFile, sizeof(char));
-		if (fileIn.fail())
-			return Expected<string>::Failed(LRC_ERR_FILE_READ);
-		length = lengthFromFile;
+		Expected<int> len = Read7BitEncodedInt();
+		if (!len.HasValue())
+			return Expected<string>::Failed(len.error);
+		length = len.value;
 	}
 
 	// the string is fixed length so theoretically it may not be null terminated
