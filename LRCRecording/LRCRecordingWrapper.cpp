@@ -8,6 +8,11 @@
 LRCReader* reader = NULL;
 
 /// <summary>
+/// The camera parameters.
+/// </summary>
+CameraParameters cameraParams;
+
+/// <summary>
 /// The object parameters.
 /// </summary>
 ObjectParameters objectParams;
@@ -116,13 +121,22 @@ LRCRECORDING_API_C void GetRecordingNote(char* buff, int length)
 	// if the recording has a note
 	if (reader->GetHeaderFlags() & LRCCommon::FileHeaderInfoFlags::FileNote)
 	{
-		// copy the not to the output buffer
+		// copy the note to the output buffer
 		string* note = (string*)reader->GetDynamicHeaderInfo()[LRCCommon::FileHeaderInfoFlags::FileNote];
 		strcpy_s(buff, length, note->c_str());
 	}
 	else
 		// no note
 		buff[0] = '\0';
+}
+
+//
+// Gets the camera parameters.
+//
+LRCRECORDING_API_C struct CameraParameters* GetCameraParameters()
+{
+	cameraParams = reader->GetCameraParameters();
+	return &cameraParams;
 }
 
 //

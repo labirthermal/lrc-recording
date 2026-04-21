@@ -126,6 +126,11 @@ public:
 	uint16_t GetHeight() { return cameraParams.height; }
 
 	/// <summary>
+	/// Gets the camera parameters.
+	/// </summary>
+	CameraParameters GetCameraParameters() { return cameraParams; }
+
+	/// <summary>
 	/// Gets the object parameters.
 	/// Used for off-line sources such as recording files.
 	/// </summary>

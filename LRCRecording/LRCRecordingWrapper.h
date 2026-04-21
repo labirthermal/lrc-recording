@@ -54,6 +54,13 @@ LRCRECORDING_API_C int GetRecordingNoteLength();
 LRCRECORDING_API_C void GetRecordingNote(char* buff, int length);
 
 /// <summary>
+/// Gets the camera parameters.
+/// </summary>
+/// <returns>Returns the camera parameters.</returns>
+/// <remarks>MATLAB doesn't support struct as a return type so it must be a pointer.</remarks>
+LRCRECORDING_API_C struct CameraParameters* GetCameraParameters();
+
+/// <summary>
 /// Gets the object parameters.
 /// </summary>
 /// <returns>Returns the object parameters.</returns>
